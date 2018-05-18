@@ -1,5 +1,6 @@
 #include "MMCoreC.h"
 
+#include <stdlib.h>
 #include <string.h>
 #include "MMCore.h"
 
@@ -26,6 +27,10 @@ DllExport void MM_GetAPIVersionInfo(MM_Session mm, char *info, int len_info) {
     std::string str = core->getAPIVersionInfo();
     strcpy_s(info, len_info, str.c_str());
     return;
+}
+
+DllExport void MM_Free(void *ptr) {
+	free(ptr);
 }
 
 //
@@ -114,9 +119,9 @@ DllExport void MM_GetDeviceAdapterSearchPaths(MM_Session mm, char*** paths, size
     std::vector<std::string> vpath = core->getDeviceAdapterSearchPaths();
 
 	*len_paths = vpath.size();
-    *paths = new char*[vpath.size()];
+    *paths = (char**)malloc(vpath.size() * sizeof(char*));
     for (size_t i = 0; i < vpath.size(); i++) {
-        *paths[i] = new char[vpath[i].size() + 1];
+        *paths[i] = (char*)malloc(vpath[i].size() + 1);
         strcpy_s(*paths[i], vpath[i].size() + 1, vpath[i].c_str());
     }
 }
@@ -131,9 +136,9 @@ DllExport MM_Status MM_GetDeviceAdapterNames(MM_Session mm, char*** names, size_
     }
 
 	*len_names = vnames.size();
-    *names = new char*[vnames.size()];
+    *names = (char**)malloc(vnames.size() * sizeof(char*));
     for (size_t i = 0; i < vnames.size(); i++) {
-        (*names)[i] = new char[vnames[i].size() + 1];
+        (*names)[i] = (char*)malloc(vnames[i].size() + 1);
         strcpy_s((*names)[i], vnames[i].size()+1, vnames[i].c_str());
     }
     return MM_ErrOK;
