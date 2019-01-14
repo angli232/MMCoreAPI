@@ -1,17 +1,21 @@
 package mmcore
 
+// #cgo CFLAGS: -I../MMCoreC
+//
+// #include "MMCoreC.h"
+import "C"
+
 import (
-	"C"
 	"fmt"
 )
 
 type Error int
 
-func statusToError(status C.int) error {
-	if int(status) == 0 {
+func statusToError(status C.MM_Status) error {
+	if int(C.int(status)) == 0 {
 		return nil
 	}
-	return Error(int(status))
+	return Error(int(C.int(status)))
 }
 
 func (e Error) Error() string {

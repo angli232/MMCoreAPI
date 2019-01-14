@@ -27,15 +27,21 @@ func (s *Session) Close() {
 }
 
 func (s *Session) VersionInfo() string {
-	var buf [256]C.char
-	C.MM_GetVersionInfo(s.mmcore, (*C.char)(unsafe.Pointer(&buf[0])), (C.int)(len(buf)))
-	return C.GoString((*C.char)(&buf[0]))
+	var c_str *C.char
+	C.MM_GetVersionInfo(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	str := C.GoString(c_str)
+	return str
 }
 
 func (s *Session) APIVersionInfo() string {
-	var buf [256]C.char
-	C.MM_GetAPIVersionInfo(s.mmcore, (*C.char)(unsafe.Pointer(&buf[0])), (C.int)(len(buf)))
-	return C.GoString((*C.char)(&buf[0]))
+	var c_str *C.char
+	C.MM_GetAPIVersionInfo(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	str := C.GoString(c_str)
+	return str
 }
 
 //
@@ -91,59 +97,33 @@ func (s *Session) Reset() error {
 
 func (s *Session) DeviceAdapterSearchPaths() (paths []string) {
 	var c_paths **C.char
-	var len_c_paths C.size_t
-	C.MM_GetDeviceAdapterSearchPaths(s.mmcore, &c_paths, &len_c_paths)
+	C.MM_GetDeviceAdapterSearchPaths(s.mmcore, &c_paths)
+	defer C.MM_StringListFree(c_paths)
 
-	if len_c_paths == 0 {
-		return []string{}
-	}
-
-	paths = make([]string, len_c_paths)
-
-	c_paths_slice := (*[1 << 30]*C.char)(unsafe.Pointer(c_paths))[:len_c_paths:len_c_paths]
-	for i, c_path := range c_paths_slice {
-		paths[i] = C.GoString(c_path)
-		C.MM_Free(unsafe.Pointer(c_path))
-	}
-	C.MM_Free(unsafe.Pointer(c_paths))
-
+	paths = goStringList(c_paths)
 	return
 }
 
 func (s *Session) SetDeviceAdapterSearchPaths(paths []string) {
-	c_paths := make([]*C.char, len(paths))
+	c_paths := make([]*C.char, len(paths)+1)
 	for i, path := range paths {
 		c_paths[i] = C.CString(path)
 	}
-	C.MM_SetDeviceAdapterSearchPaths(s.mmcore, &c_paths[0], (C.size_t)(len(c_paths)))
-	for _, c_path := range c_paths {
-		C.free(unsafe.Pointer(c_path))
+	c_paths[len(paths)] = (*C.char)(C.NULL)
+
+	C.MM_SetDeviceAdapterSearchPaths(s.mmcore, &c_paths[0])
+	for i := 0; i < len(paths); i++ {
+		C.free(unsafe.Pointer(c_paths[i]))
 	}
 }
 
 func (s *Session) GetDeviceAdapterNames() (names []string, err error) {
 	var c_names **C.char
-	var len_c_names C.size_t
-	status := C.MM_GetDeviceAdapterNames(s.mmcore, &c_names, &len_c_names)
+	status := C.MM_GetDeviceAdapterNames(s.mmcore, &c_names)
+	defer C.MM_StringListFree(c_names)
 
-	if status != 0 {
-		err = Error(int(status))
-		return
-	}
-
-	if len_c_names == 0 {
-		return []string{}, nil
-	}
-
-	names = make([]string, int(len_c_names))
-
-	c_names_slice := (*[1 << 30]*C.char)(unsafe.Pointer(c_names))[:len_c_names:len_c_names]
-	for i, c_name := range c_names_slice {
-		names[i] = C.GoString(c_name)
-		C.MM_Free(unsafe.Pointer(c_name))
-	}
-	C.MM_Free(unsafe.Pointer(c_names))
-
+	names = goStringList(c_names)
+	err = statusToError(status)
 	return
 }
 
@@ -155,42 +135,23 @@ func (s *Session) GetDevicePropertyNames(label string) (names []string, err erro
 	defer C.free(unsafe.Pointer(c_label))
 
 	var c_names **C.char
-	var len_c_names C.size_t
-	status := C.MM_GetDevicePropertyNames(s.mmcore, c_label, &c_names, &len_c_names)
+	status := C.MM_GetDevicePropertyNames(s.mmcore, c_label, &c_names)
+	defer C.MM_StringListFree(c_names)
 
-	if status != 0 {
-		err = Error(int(status))
-		return
-	}
-
-	if len_c_names == 0 {
-		return []string{}, nil
-	}
-
-	names = make([]string, int(len_c_names))
-
-	c_names_slice := (*[1 << 30]*C.char)(unsafe.Pointer(c_names))[:len_c_names:len_c_names]
-	for i, c_name := range c_names_slice {
-		names[i] = C.GoString(c_name)
-		C.MM_Free(unsafe.Pointer(c_name))
-	}
-	C.MM_Free(unsafe.Pointer(c_names))
-
+	names = goStringList(c_names)
+	err = statusToError(status)
 	return
 }
 
 func (s *Session) GetProperty(label string, property string) (value string, err error) {
 	c_label := C.CString(label)
-	defer C.free(unsafe.Pointer(c_label))
-
 	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
 	defer C.free(unsafe.Pointer(c_property))
 
 	var c_value *C.char
-	var len_c_value C.size_t
-
-	status := C.MM_GetProperty(s.mmcore, c_label, c_property, &c_value, &len_c_value)
-	defer C.MM_Free(unsafe.Pointer(c_value))
+	status := C.MM_GetProperty(s.mmcore, c_label, c_property, &c_value)
+	defer C.MM_StringFree(c_value)
 
 	value = C.GoString(c_value)
 	err = statusToError(status)
@@ -199,15 +160,14 @@ func (s *Session) GetProperty(label string, property string) (value string, err 
 
 func (s *Session) SetProperty(label string, property string, state interface{}) (err error) {
 	c_label := C.CString(label)
-	defer C.free(unsafe.Pointer(c_label))
-
 	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
 	defer C.free(unsafe.Pointer(c_property))
 
-	var status C.int
+	var status C.MM_Status
 	switch state.(type) {
 	case bool:
-		var c_state C.int
+		var c_state C.uint8_t
 		if state.(bool) {
 			c_state = 1
 		} else {
@@ -217,9 +177,9 @@ func (s *Session) SetProperty(label string, property string, state interface{}) 
 	case int:
 		status = C.MM_SetPropertyInt(s.mmcore, c_label, c_property, (C.int32_t)(state.(int)))
 	case float32:
-		status = C.MM_SetPropertyFloat32(s.mmcore, c_label, c_property, (C.float)(state.(float32)))
+		status = C.MM_SetPropertyFloat(s.mmcore, c_label, c_property, (C.float)(state.(float32)))
 	case float64:
-		status = C.MM_SetPropertyFloat64(s.mmcore, c_label, c_property, (C.double)(state.(float64)))
+		status = C.MM_SetPropertyDouble(s.mmcore, c_label, c_property, (C.double)(state.(float64)))
 	case string:
 		c_state := C.CString(state.(string))
 		status = C.MM_SetPropertyString(s.mmcore, c_label, c_property, c_state)
@@ -263,6 +223,7 @@ func (s *Session) SnapImage() error {
 func (s *Session) ImageBufferSize() (len int, err error) {
 	var c_len C.uint32_t
 	status := C.MM_GetImageBufferSize(s.mmcore, &c_len)
+
 	len = int(c_len)
 	err = statusToError(status)
 	return
@@ -276,17 +237,17 @@ func (s *Session) GetImage() (buf []byte, err error) {
 
 	var c_pbuf *C.uint8_t
 	status := C.MM_GetImage(s.mmcore, &c_pbuf)
-	if status != 0 {
-		err = Error(int(status))
-	}
 
 	buf = C.GoBytes(unsafe.Pointer(c_pbuf), C.int(len))
+	err = statusToError(status)
+
 	return
 }
 
 func (s *Session) ImageWidth() (width int, err error) {
 	var c_width C.uint16_t
 	status := C.MM_GetImageWidth(s.mmcore, &c_width)
+
 	width = int(c_width)
 	err = statusToError(status)
 	return
@@ -295,6 +256,7 @@ func (s *Session) ImageWidth() (width int, err error) {
 func (s *Session) ImageHeight() (height int, err error) {
 	var c_height C.uint16_t
 	status := C.MM_GetImageHeight(s.mmcore, &c_height)
+
 	height = int(c_height)
 	err = statusToError(status)
 	return
@@ -303,6 +265,7 @@ func (s *Session) ImageHeight() (height int, err error) {
 func (s *Session) BytesPerPixel() (bytes_per_pixel int, err error) {
 	var c_bytes_per_pixel C.uint8_t
 	status := C.MM_GetBytesPerPixel(s.mmcore, &c_bytes_per_pixel)
+
 	bytes_per_pixel = int(c_bytes_per_pixel)
 	err = statusToError(status)
 	return
@@ -311,6 +274,7 @@ func (s *Session) BytesPerPixel() (bytes_per_pixel int, err error) {
 func (s *Session) ImageBitDepth() (bit_depth int, err error) {
 	var c_bit_depth C.uint8_t
 	status := C.MM_GetImageBitDepth(s.mmcore, &c_bit_depth)
+
 	bit_depth = int(c_bit_depth)
 	err = statusToError(status)
 	return
@@ -319,6 +283,7 @@ func (s *Session) ImageBitDepth() (bit_depth int, err error) {
 func (s *Session) NumberOfComponents() (n_components int, err error) {
 	var c_n_components C.uint8_t
 	status := C.MM_GetNumberOfComponents(s.mmcore, &c_n_components)
+
 	n_components = int(c_n_components)
 	err = statusToError(status)
 	return
@@ -327,6 +292,7 @@ func (s *Session) NumberOfComponents() (n_components int, err error) {
 func (s *Session) NumberOfCameraChannels() (n_channels int, err error) {
 	var c_n_channels C.uint8_t
 	status := C.MM_GetNumberOfCameraChannels(s.mmcore, &c_n_channels)
+
 	n_channels = int(c_n_channels)
 	err = statusToError(status)
 	return
@@ -350,6 +316,7 @@ func (s *Session) GetState(label string) (state int, err error) {
 
 	var c_state C.int32_t
 	status := C.MM_GetState(s.mmcore, c_label, &c_state)
+
 	state = int(c_state)
 	err = statusToError(status)
 	return
@@ -361,6 +328,7 @@ func (s *Session) NumberOfStates(label string) (n_states int, err error) {
 
 	var c_n_states C.int32_t
 	status := C.MM_GetNumberOfStates(s.mmcore, c_label, &c_n_states)
+
 	n_states = int(c_n_states)
 	err = statusToError(status)
 	return
@@ -382,3 +350,18 @@ func (s *Session) NumberOfStates(label string) (n_states int, err error) {
 //
 // Hub and peripheral devices.
 //
+
+// Helper function
+func goStringList(c_str_list **C.char) []string {
+	strs := make([]string, 0)
+
+	c_str_slice := (*[1 << 30]*C.char)(unsafe.Pointer(c_str_list))
+	for _, c_str := range c_str_slice {
+		if unsafe.Pointer(c_str) == C.NULL {
+			break
+		}
+		str := C.GoString(c_str)
+		strs = append(strs, str)
+	}
+	return strs
+}
