@@ -118,7 +118,7 @@ DllExport void MM_GetDeviceAdapterSearchPaths(MM_Session mm, char*** paths, size
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     std::vector<std::string> vpath = core->getDeviceAdapterSearchPaths();
 
-	*len_paths = vpath.size();
+    *len_paths = vpath.size();
     *paths = (char**)malloc(vpath.size() * sizeof(char*));
     for (size_t i = 0; i < vpath.size(); i++) {
         *paths[i] = (char*)malloc(vpath[i].size() + 1);
@@ -135,7 +135,7 @@ DllExport MM_Status MM_GetDeviceAdapterNames(MM_Session mm, char*** names, size_
         return MM_Status(e.getCode());
     }
 
-	*len_names = vnames.size();
+    *len_names = vnames.size();
     *names = (char**)malloc(vnames.size() * sizeof(char*));
     for (size_t i = 0; i < vnames.size(); i++) {
         (*names)[i] = (char*)malloc(vnames[i].size() + 1);
@@ -148,6 +148,96 @@ DllExport MM_Status MM_GetDeviceAdapterNames(MM_Session mm, char*** names, size_
 //
 // Generic device control
 //
+DllExport MM_Status MM_GetDevicePropertyNames(MM_Session mm, const char* label, char*** names, size_t *len_names) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+	std::vector<std::string> vname;
+    try {
+         vname = core->getDevicePropertyNames(label);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+
+    *len_names = vname.size();
+    *names = (char**)malloc(vname.size() * sizeof(char*));
+    for (size_t i = 0; i < vname.size(); i++) {
+        *names[i] = (char*)malloc(vname[i].size() + 1);
+        strcpy_s(*names[i], vname[i].size() + 1, vname[i].c_str());
+    }
+}
+
+DllExport MM_Status MM_HasProperty(MM_Session mm, const char* label, const char* prop_name, int* has_property) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        *has_property = (int)core->hasProperty(label, prop_name);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
+DllExport MM_Status MM_GetProperty(MM_Session mm, const char* label, const char* prop_name, char** value, size_t* len_value) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+	std::string str;
+    try {
+        str = core->getProperty(label, prop_name);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    *len_value = str.size();
+    *value = (char*)malloc(str.size() + 1);
+    strcpy_s(*value, str.size() + 1, str.c_str());
+    return MM_ErrOK;
+}
+
+DllExport MM_Status MM_SetPropertyString(MM_Session mm, const char* label, const char* prop_name, const char* value) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        core->setProperty(label, prop_name, value);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
+DllExport MM_Status MM_SetPropertyBool(MM_Session mm, const char* label, const char* prop_name, const int value) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        core->setProperty(label, prop_name, (const bool)value);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
+DllExport MM_Status MM_SetPropertyInt(MM_Session mm, const char* label, const char* prop_name, const int32_t value) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        core->setProperty(label, prop_name, (const long)value);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
+DllExport MM_Status MM_SetPropertyFloat32(MM_Session mm, const char* label, const char* prop_name, const float value) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        core->setProperty(label, prop_name, value);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
+DllExport MM_Status MM_SetPropertyFloat64(MM_Session mm, const char* label, const char* prop_name, const double value) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        core->setProperty(label, prop_name, value);
+    } catch (CMMError& e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
 
 //
 // Manage current devices

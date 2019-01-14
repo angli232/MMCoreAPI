@@ -34,6 +34,14 @@ DllExport void MM_GetDeviceAdapterSearchPaths(MM_Session mm, char*** paths, size
 DllExport MM_Status MM_GetDeviceAdapterNames(MM_Session mm, char*** device_adapter_names, size_t *len_paths);
 
 // Generic device control
+DllExport MM_Status MM_GetDevicePropertyNames(MM_Session mm, const char* label, char*** names, size_t *len_names);
+DllExport MM_Status MM_HasProperty(MM_Session mm, const char* label, const char* prop_name, int* has_property);
+DllExport MM_Status MM_GetProperty(MM_Session mm, const char* label, const char* prop_name, char** value, size_t* len_value);
+DllExport MM_Status MM_SetPropertyString(MM_Session mm, const char* label, const char* prop_name, const char* value);
+DllExport MM_Status MM_SetPropertyBool(MM_Session mm, const char* label, const char* prop_name, const int value);
+DllExport MM_Status MM_SetPropertyInt(MM_Session mm, const char* label, const char* prop_name, const int32_t value);
+DllExport MM_Status MM_SetPropertyFloat32(MM_Session mm, const char* label, const char* prop_name, const float value);
+DllExport MM_Status MM_SetPropertyFloat64(MM_Session mm, const char* label, const char* prop_name, const double value);
 
 // Manage current devices
 DllExport MM_Status MM_SetCameraDevice(MM_Session mm, const char* label);

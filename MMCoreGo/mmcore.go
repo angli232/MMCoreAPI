@@ -148,6 +148,87 @@ func (s *Session) GetDeviceAdapterNames() (names []string, err error) {
 }
 
 //
+// Generic device control
+//
+func (s *Session) GetDevicePropertyNames(label string) (names []string, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_names **C.char
+	var len_c_names C.size_t
+	status := C.MM_GetDevicePropertyNames(s.mmcore, c_label, &c_names, &len_c_names)
+
+	if status != 0 {
+		err = Error(int(status))
+		return
+	}
+
+	if len_c_names == 0 {
+		return []string{}, nil
+	}
+
+	names = make([]string, int(len_c_names))
+
+	c_names_slice := (*[1 << 30]*C.char)(unsafe.Pointer(c_names))[:len_c_names:len_c_names]
+	for i, c_name := range c_names_slice {
+		names[i] = C.GoString(c_name)
+		C.MM_Free(unsafe.Pointer(c_name))
+	}
+	C.MM_Free(unsafe.Pointer(c_names))
+
+	return
+}
+
+func (s *Session) GetProperty(label string, property string) (value string, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_value *C.char
+	var len_c_value C.size_t
+
+	status := C.MM_GetProperty(s.mmcore, c_label, c_property, &c_value, &len_c_value)
+	defer C.MM_Free(unsafe.Pointer(c_value))
+
+	value = C.GoString(c_value)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) SetProperty(label string, property string, state interface{}) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_property))
+
+	var status C.int
+	switch state.(type) {
+	case bool:
+		var c_state C.int
+		if state.(bool) {
+			c_state = 1
+		} else {
+			c_state = 0
+		}
+		status = C.MM_SetPropertyBool(s.mmcore, c_label, c_property, c_state)
+	case int:
+		status = C.MM_SetPropertyInt(s.mmcore, c_label, c_property, (C.int32_t)(state.(int)))
+	case float32:
+		status = C.MM_SetPropertyFloat32(s.mmcore, c_label, c_property, (C.float)(state.(float32)))
+	case float64:
+		status = C.MM_SetPropertyFloat64(s.mmcore, c_label, c_property, (C.double)(state.(float64)))
+	case string:
+		c_state := C.CString(state.(string))
+		status = C.MM_SetPropertyString(s.mmcore, c_label, c_property, c_state)
+		C.free(unsafe.Pointer(c_state))
+	}
+	return statusToError(status)
+}
+
+//
 // Manage current devices.
 //
 
