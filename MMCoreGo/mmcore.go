@@ -297,7 +297,7 @@ func (s *Session) AutoFocusDevice() (label string) {
 }
 
 //
-// Image acquisition
+// Image acquisition settings
 //
 
 // SetExposureTime sets the exposure time of the current camera in milliseconds.
@@ -313,11 +313,11 @@ func (s *Session) ExposureTime() (exposure_ms float64, err error) {
 	return
 }
 
-func (s *Session) SnapImage() error {
-	status := C.MM_SnapImage(s.mmcore)
-	return statusToError(status)
-}
-
+// ImageBufferSize returns the size of the image buffer.
+//
+// The size is consistent with values returned by ImageWidth(), ImageHeight() and ImageBytesPerPixel().
+// The camera never changes the size of image buffer on its own.
+// The buffer size changes only when appropriate properties are set (such as binning, pixel type, etc.)
 func (s *Session) ImageBufferSize() (len int) {
 	var c_len C.uint32_t
 	C.MM_GetImageBufferSize(s.mmcore, &c_len)
@@ -326,6 +326,82 @@ func (s *Session) ImageBufferSize() (len int) {
 	return
 }
 
+// ImageWidth returns the width of the image.
+func (s *Session) ImageWidth() (width int) {
+	var c_width C.uint16_t
+	C.MM_GetImageWidth(s.mmcore, &c_width)
+
+	width = int(c_width)
+	return
+}
+
+// ImageWidth returns the height of the image.
+func (s *Session) ImageHeight() (height int) {
+	var c_height C.uint16_t
+	C.MM_GetImageHeight(s.mmcore, &c_height)
+
+	height = int(c_height)
+	return
+}
+
+// ImageWidth returns number of bytes in a pixel in image buffer data.
+func (s *Session) BytesPerPixel() (bytes_per_pixel int) {
+	var c_bytes_per_pixel C.uint8_t
+	C.MM_GetBytesPerPixel(s.mmcore, &c_bytes_per_pixel)
+
+	bytes_per_pixel = int(c_bytes_per_pixel)
+	return
+}
+
+// ImageBitDepth returns the the bit depth of the pixel to indicate the dynamic range.
+//
+// It does not directly affect the image buffer size, and just gives a guideline on how to interpret pixel values.
+func (s *Session) ImageBitDepth() (bit_depth int) {
+	var c_bit_depth C.uint8_t
+	C.MM_GetImageBitDepth(s.mmcore, &c_bit_depth)
+
+	bit_depth = int(c_bit_depth)
+	return
+}
+
+// NumberOfComponents returns the number of comopnents in the image. 1 for monochrome cameras, 4 for RGB cameras.
+func (s *Session) NumberOfComponents() (n_components int) {
+	var c_n_components C.uint8_t
+	C.MM_GetNumberOfComponents(s.mmcore, &c_n_components)
+
+	n_components = int(c_n_components)
+	return
+}
+
+// NumberOfCameraChannels returns the number of simultaneous channels that camera is capable of.
+//
+// This is not used by color cameras, which use NumberOfComponents() .
+func (s *Session) NumberOfCameraChannels() (n_channels int) {
+	var c_n_channels C.uint8_t
+	C.MM_GetNumberOfCameraChannels(s.mmcore, &c_n_channels)
+
+	n_channels = int(c_n_channels)
+	return
+}
+
+//
+// Image acquisition
+//
+
+// SnapImage starts the exposure of a single image and returns when the exposure is finished.
+//
+// It does not wait for the read-out and data transfering.
+func (s *Session) SnapImage() error {
+	status := C.MM_SnapImage(s.mmcore)
+	return statusToError(status)
+}
+
+// GetImage returns the image buffer data.
+//
+// GetImage is called after SnapImage returns.
+// It waits for the camera read-out and data transfering.
+//
+// In the case of multi-channel camera, image data of the first channel is returned.
 func (s *Session) GetImage() (buf []byte, err error) {
 	len := s.ImageBufferSize()
 
@@ -338,52 +414,130 @@ func (s *Session) GetImage() (buf []byte, err error) {
 	return
 }
 
-func (s *Session) ImageWidth() (width int) {
-	var c_width C.uint16_t
-	C.MM_GetImageWidth(s.mmcore, &c_width)
+func (s *Session) GetImageOfChannel(channel int) (buf []byte, err error) {
+	len := s.ImageBufferSize()
 
-	width = int(c_width)
+	var c_pbuf *C.uint8_t
+	status := C.MM_GetImageOfChannel(s.mmcore, (C.uint16_t)(channel), &c_pbuf)
+
+	buf = C.GoBytes(unsafe.Pointer(c_pbuf), C.int(len))
+	err = statusToError(status)
+
 	return
 }
 
-func (s *Session) ImageHeight() (height int) {
-	var c_height C.uint16_t
-	C.MM_GetImageHeight(s.mmcore, &c_height)
+//
+// Image sequence acquisition
+//
 
-	height = int(c_height)
+func (s *Session) StartSequenceAcquisition(num_images int16, interval_ms float64, stop_on_overflow bool) error {
+	var c_stop_on_overflow C.uint8_t
+	if stop_on_overflow {
+		c_stop_on_overflow = 1
+	} else {
+		c_stop_on_overflow = 0
+	}
+
+	status := C.MM_StartSequenceAcquisition(s.mmcore, (C.int16_t)(num_images), (C.double)(interval_ms), c_stop_on_overflow)
+	return statusToError(status)
+}
+
+func (s *Session) StartContinuousSequenceAcquisition(interval_ms float64) error {
+	status := C.MM_StartContinuousSequenceAcquisition(s.mmcore, (C.double)(interval_ms))
+	return statusToError(status)
+}
+
+func (s *Session) StopSequenceAcquisition() error {
+	status := C.MM_StopSequenceAcquisition(s.mmcore)
+	return statusToError(status)
+}
+
+func (s *Session) IsSequenceRunning() bool {
+	var c_status C.uint8_t
+	C.MM_IsSequenceRunning(s.mmcore, &c_status)
+	if uint8(c_status) == 0 {
+		return false
+	}
+	return true
+}
+
+//
+// Image circular buffer
+//
+
+// GetLastImage gets the last image from the circular buffer. It returns nil if the buffer is empty.
+func (s *Session) GetLastImage() (buf []byte, err error) {
+	var c_pbuf *C.uint8_t
+	status := C.MM_GetLastImage(s.mmcore, &c_pbuf)
+
+	if unsafe.Pointer(c_pbuf) == C.NULL {
+		buf = nil
+	} else {
+		len := s.ImageBufferSize()
+		buf = C.GoBytes(unsafe.Pointer(c_pbuf), C.int(len))
+	}
+	err = statusToError(status)
 	return
 }
 
-func (s *Session) BytesPerPixel() (bytes_per_pixel int) {
-	var c_bytes_per_pixel C.uint8_t
-	C.MM_GetBytesPerPixel(s.mmcore, &c_bytes_per_pixel)
+// PopNextImage gets the removes the next image from the circular buffer. It returns nil if the buffer is empty.
+func (s *Session) PopNextImage() (buf []byte, err error) {
+	var c_pbuf *C.uint8_t
+	status := C.MM_PopNextImage(s.mmcore, &c_pbuf)
 
-	bytes_per_pixel = int(c_bytes_per_pixel)
+	if unsafe.Pointer(c_pbuf) == C.NULL {
+		buf = nil
+	} else {
+		len := s.ImageBufferSize()
+		buf = C.GoBytes(unsafe.Pointer(c_pbuf), C.int(len))
+	}
+	err = statusToError(status)
 	return
 }
 
-func (s *Session) ImageBitDepth() (bit_depth int) {
-	var c_bit_depth C.uint8_t
-	C.MM_GetImageBitDepth(s.mmcore, &c_bit_depth)
-
-	bit_depth = int(c_bit_depth)
-	return
+func (s *Session) GetRemainingImageCount() (count int) {
+	var c_count C.int16_t
+	C.MM_GetRemainingImageCount(s.mmcore, &c_count)
+	return int(c_count)
 }
 
-func (s *Session) NumberOfComponents() (n_components int) {
-	var c_n_components C.uint8_t
-	C.MM_GetNumberOfComponents(s.mmcore, &c_n_components)
-
-	n_components = int(c_n_components)
-	return
+func (s *Session) GetBufferTotalCapacity() (capacity int) {
+	var c_capacity C.int16_t
+	C.MM_GetBufferTotalCapacity(s.mmcore, &c_capacity)
+	return int(c_capacity)
 }
 
-func (s *Session) NumberOfCameraChannels() (n_channels int) {
-	var c_n_channels C.uint8_t
-	C.MM_GetNumberOfCameraChannels(s.mmcore, &c_n_channels)
+func (s *Session) GetBufferFreeCapacity() (capacity int) {
+	var c_capacity C.int16_t
+	C.MM_GetBufferFreeCapacity(s.mmcore, &c_capacity)
+	return int(c_capacity)
+}
 
-	n_channels = int(c_n_channels)
-	return
+func (s *Session) MM_IsBufferOverflowed() (overflowed bool) {
+	var c_overflowed C.uint8_t
+	C.MM_IsBufferOverflowed(s.mmcore, &c_overflowed)
+	return goBool(c_overflowed)
+}
+
+func (s *Session) SetCircularBufferMemoryFootprint(size_MB uint32) error {
+	status := C.MM_SetCircularBufferMemoryFootprint(s.mmcore, (C.uint32_t)(size_MB))
+	return statusToError(status)
+}
+
+func (s *Session) MM_GetCircularBufferMemoryFootprint() (size_MB uint32) {
+	var c_size_MB C.uint32_t
+	C.MM_GetCircularBufferMemoryFootprint(s.mmcore, &c_size_MB)
+	return uint32(c_size_MB)
+}
+
+func (s *Session) InitializeCircularBuffer() error {
+	status := C.MM_InitializeCircularBuffer(s.mmcore)
+	return statusToError(status)
+}
+
+func (s *Session) ClearCircularBuffer() error {
+	status := C.MM_ClearCircularBuffer(s.mmcore)
+	return statusToError(status)
 }
 
 //
@@ -456,4 +610,11 @@ func goStringList(c_str_list **C.char) []string {
 		strs = append(strs, str)
 	}
 	return strs
+}
+
+func goBool(c_bool C.uint8_t) bool {
+	if c_bool != 0 {
+		return true
+	}
+	return false
 }
