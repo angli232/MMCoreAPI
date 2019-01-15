@@ -276,7 +276,7 @@ DllExport MM_Status MM_SetPropertyBool(MM_Session mm, const char *label,
                                        const uint8_t value) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
-        core->setProperty(label, prop_name, (const bool)value);
+        core->setProperty(label, prop_name, (const bool)(value !=0));
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
@@ -733,7 +733,7 @@ DllExport MM_Status MM_StartSequenceAcquisition(MM_Session mm,
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
         core->startSequenceAcquisition(num_images, interval_ms,
-                                       (bool)stop_on_overflow);
+                                       (bool)(stop_on_overflow != 0));
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
@@ -823,7 +823,7 @@ DllExport MM_Status MM_SetShutter(MM_Session mm, const char *label,
                                   uint8_t state) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
-        core->setShutterOpen(label, (bool)(state));
+        core->setShutterOpen(label, (bool)(state != 0));
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
