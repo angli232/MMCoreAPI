@@ -189,7 +189,7 @@ DllExport void MM_GetFocusDevice(MM_Session mm, char **label);
 DllExport void MM_GetXYStageDevice(MM_Session mm, char **label);
 DllExport void MM_GetAutoFocusDevice(MM_Session mm, char **label);
 
-// Image acquisition
+// Image acquisition settings
 DllExport MM_Status MM_SetROI(MM_Session mm, int x, int y, int x_size,
                               int y_size);
 DllExport MM_Status MM_GetROI(MM_Session mm, int *x, int *y, int *x_size,
@@ -198,8 +198,6 @@ DllExport MM_Status MM_ClearROI(MM_Session mm);
 
 DllExport MM_Status MM_SetExposure(MM_Session mm, double exp);
 DllExport MM_Status MM_GetExposure(MM_Session mm, double *exp);
-DllExport MM_Status MM_SnapImage(MM_Session mm);
-DllExport MM_Status MM_GetImage(MM_Session mm, uint8_t **ptr_buffer);
 
 DllExport void MM_GetImageWidth(MM_Session mm, uint16_t *width);
 DllExport void MM_GetImageHeight(MM_Session mm, uint16_t *height);
@@ -211,6 +209,12 @@ DllExport void MM_GetNumberOfCameraChannels(MM_Session mm,
                                             uint8_t *n_channels);
 DllExport void MM_GetImageBufferSize(MM_Session mm, uint32_t *len);
 
+// Image acquisition
+DllExport MM_Status MM_SnapImage(MM_Session mm);
+DllExport MM_Status MM_GetImage(MM_Session mm, uint8_t **ptr_buffer);
+DllExport MM_Status MM_GetImageOfChannel(MM_Session mm, uint16_t channel, uint8_t **ptr_buffer);
+
+// Image sequence acquisition
 DllExport MM_Status MM_StartSequenceAcquisition(MM_Session mm,
                                                 int16_t num_images,
                                                 double interval_ms,
@@ -237,10 +241,10 @@ DllExport MM_Status MM_InitializeCircularBuffer(MM_Session mm);
 DllExport MM_Status MM_ClearCircularBuffer(MM_Session mm);
 
 // Shutter control
-DllExport MM_Status MM_SetShutter(MM_Session mm, const char *label,
-                                  uint8_t state);
-DllExport MM_Status MM_GetShutter(MM_Session mm, const char *label,
-                                  uint8_t *state);
+DllExport MM_Status MM_SetShutterOpen(MM_Session mm, const char *label,
+                                  uint8_t is_open);
+DllExport MM_Status MM_GetShutteOpenr(MM_Session mm, const char *label,
+                                  uint8_t *is_open);
 
 // Autofocus control
 DllExport void MM_GetLastFocusScore(MM_Session mm, double *score);

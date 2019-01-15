@@ -591,6 +591,16 @@ DllExport MM_Status MM_GetImage(MM_Session mm, uint8_t **ptr_buffer) {
     return MM_ErrOK;
 }
 
+DllExport MM_Status MM_GetImageOfChannel(MM_Session mm, uint16_t channel, uint8_t **ptr_buffer) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        *ptr_buffer = (uint8_t *)(core->getImage(channel));
+    } catch (CMMError &e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
 DllExport void MM_GetImageWidth(MM_Session mm, uint16_t *width) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     *width = (uint16_t)(core->getImageWidth());
@@ -762,22 +772,22 @@ DllExport void MM_IsBufferOverflowed(MM_Session mm, uint8_t *overflowed) {
 // Shutter control
 //
 
-DllExport MM_Status MM_SetShutter(MM_Session mm, const char *label,
-                                  uint8_t state) {
+DllExport MM_Status MM_SetShutterOpen(MM_Session mm, const char *label,
+                                  uint8_t is_open) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
-        core->setShutterOpen(label, (bool)(state != 0));
+        core->setShutterOpen(label, (bool)(is_open != 0));
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
     return MM_ErrOK;
 }
 
-DllExport MM_Status MM_GetShutter(MM_Session mm, const char *label,
-                                  uint8_t *state) {
+DllExport MM_Status MM_GetShutterOpen(MM_Session mm, const char *label,
+                                  uint8_t *is_open) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
-        *state = (bool)(core->getShutterOpen(label));
+        *is_open = (bool)(core->getShutterOpen(label));
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
