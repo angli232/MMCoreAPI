@@ -106,6 +106,21 @@ DllExport MM_Status MM_InitializeAllDevices(MM_Session mm);
 DllExport MM_Status MM_InitializeDevice(MM_Session mm, const char *label);
 DllExport MM_Status MM_Reset(MM_Session mm);
 
+// Event callback
+struct MM_EventCallback {
+    void (*onPropertiesChanged)();
+    void (*onPropertyChanged)(const char* name, const char* propName, const char* propValue);
+    void (*onConfigGroupChanged)(const char* groupName, const char* newConfigName);
+    void (*onSystemConfigurationLoaded)();
+    void (*onPixelSizeChanged)(double newPixelSizeUm);
+    void (*onStagePositionChanged)(char* name, double pos);
+    void (*onXYStagePositionChanged)(char* name, double xpos, double ypos);
+    void (*onExposureChanged)(char* name, double newExposure);
+    void (*onSLMExposureChanged)(char* name, double newExposure);
+};
+
+DllExport void MM_RegisterCallback(MM_Session mm, struct MM_EventCallback *callback);
+
 // Device listing
 DllExport void MM_SetDeviceAdapterSearchPaths(MM_Session mm,
                                               const char **paths);

@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "MMCore.h"
+#include "MMEventCallback.h"
 
 extern "C" {
 
@@ -129,6 +130,82 @@ DllExport MM_Status MM_Reset(MM_Session mm) {
         return MM_Status(e.getCode());
     }
     return MM_ErrOK;
+}
+
+//
+// Event callback
+//
+
+class MM_CPP_EventCallback: public MMEventCallback {
+private:
+    struct MM_EventCallback *callback;
+public:
+    MM_CPP_EventCallback(struct MM_EventCallback *callback) {
+        this->callback = callback;
+    }
+    virtual ~MM_CPP_EventCallback() {}
+
+    void onPropertiesChanged(){
+        if (this->callback->onPropertiesChanged != NULL) {
+            this->callback->onPropertiesChanged();
+        }
+    }
+
+    void onPropertyChanged(const char *name, const char *propName, const char *propValue) {
+        if (this->callback->onPropertyChanged != NULL) {
+            this->callback->onPropertyChanged(name, propName, propValue);
+        }
+    }
+
+    void onConfigGroupChanged(const char *groupName, const char *newConfigName) {
+        if (this->callback->onConfigGroupChanged != NULL) {
+            this->callback->onConfigGroupChanged(groupName, newConfigName);
+        }
+    }
+
+    void onSystemConfigurationLoaded() {
+        if (this->callback->onSystemConfigurationLoaded != NULL) {
+            this->callback->onSystemConfigurationLoaded();
+        }
+    }
+
+    void onPixelSizeChanged(double newPixelSizeUm) {
+        if (this->callback->onPixelSizeChanged != NULL) {
+            this->callback->onPixelSizeChanged(newPixelSizeUm);
+        }
+    }
+
+    void onStagePositionChanged(char *name, double pos) {
+        if (this->callback->onStagePositionChanged != NULL) {
+            this->callback->onStagePositionChanged(name, pos);
+        }
+    }
+
+    void onXYStagePositionChanged(char *name, double xpos, double ypos) {
+        if (this->callback->onXYStagePositionChanged != NULL) {
+            this->callback->onXYStagePositionChanged(name, xpos, ypos);
+        }
+    }
+
+    void onExposureChanged(char *name, double newExposure) {
+        if (this->callback->onExposureChanged != NULL) {
+            this->callback->onExposureChanged(name, newExposure);
+        }
+    }
+
+    void onSLMExposureChanged(char *name, double newExposure) {
+        if (this->callback->onSLMExposureChanged != NULL) {
+            this->callback->onSLMExposureChanged(name, newExposure);
+        }
+    }
+};
+
+DllExport void MM_RegisterCallback(MM_Session mm, struct MM_EventCallback *callback) {
+    // TODO: fix the memory leakage here, currently cb will not be freeed.
+    MM_CPP_EventCallback *cb = new MM_CPP_EventCallback(callback);
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    core->registerCallback(cb);
+    return;
 }
 
 //
