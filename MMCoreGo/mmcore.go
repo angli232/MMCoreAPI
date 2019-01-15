@@ -513,7 +513,7 @@ func (s *Session) GetBufferFreeCapacity() (capacity int) {
 	return int(c_capacity)
 }
 
-func (s *Session) MM_IsBufferOverflowed() (overflowed bool) {
+func (s *Session) IsBufferOverflowed() (overflowed bool) {
 	var c_overflowed C.uint8_t
 	C.MM_IsBufferOverflowed(s.mmcore, &c_overflowed)
 	return goBool(c_overflowed)
@@ -524,7 +524,7 @@ func (s *Session) SetCircularBufferMemoryFootprint(size_MB uint32) error {
 	return statusToError(status)
 }
 
-func (s *Session) MM_GetCircularBufferMemoryFootprint() (size_MB uint32) {
+func (s *Session) GetCircularBufferMemoryFootprint() (size_MB uint32) {
 	var c_size_MB C.uint32_t
 	C.MM_GetCircularBufferMemoryFootprint(s.mmcore, &c_size_MB)
 	return uint32(c_size_MB)
@@ -575,19 +575,6 @@ func (s *Session) NumberOfStates(label string) (n_states int, err error) {
 	err = statusToError(status)
 	return
 }
-
-//
-// Device discovery.
-//
-
-// func (s *Session) SupportsDeviceDetection(label string) (bool, error) {
-// 	c_label := C.CString(label)
-// 	defer C.free(unsafe.Pointer(c_label))
-
-// 	var support uint8_t
-// 	status := C.MM_SupportsDeviceDetection(s.mmcore, c_label, &support)
-// 	return statusToError(status)
-// }
 
 //
 // Hub and peripheral devices.
