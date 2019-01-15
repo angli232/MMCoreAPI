@@ -26,6 +26,7 @@ func (s *Session) Close() {
 	C.MM_Close(s.mmcore)
 }
 
+// VersionInfo returns the version of Micro-Manager Core.
 func (s *Session) VersionInfo() string {
 	var c_str *C.char
 	C.MM_GetVersionInfo(s.mmcore, &c_str)
@@ -35,6 +36,7 @@ func (s *Session) VersionInfo() string {
 	return str
 }
 
+// APIVersionInfo returns module and device interface versions.
 func (s *Session) APIVersionInfo() string {
 	var c_str *C.char
 	C.MM_GetAPIVersionInfo(s.mmcore, &c_str)
@@ -48,6 +50,8 @@ func (s *Session) APIVersionInfo() string {
 // Initialization and setup.
 //
 
+// LoadDevice loads a device with specified device adapter module
+// and assigns a label name in the session.
 func (s *Session) LoadDevice(label, module_name, device_name string) error {
 	c_label := C.CString(label)
 	c_module_name := C.CString(module_name)
@@ -95,6 +99,10 @@ func (s *Session) Reset() error {
 // Device listing.
 //
 
+// DeviceAdapterSearchPaths returns the search path for device adapter modules.
+//
+// Device adapters are usually in the installation path of Micro-Manager,
+// for example, "C:\\Program Files\\Micro-Manager-1.4"
 func (s *Session) DeviceAdapterSearchPaths() (paths []string) {
 	var c_paths **C.char
 	C.MM_GetDeviceAdapterSearchPaths(s.mmcore, &c_paths)
@@ -104,6 +112,10 @@ func (s *Session) DeviceAdapterSearchPaths() (paths []string) {
 	return
 }
 
+// SetDeviceAdapterSearchPaths sets the search path for device adapter modules.
+//
+// Device adapters are usually in the installation path of Micro-Manager,
+// for example, "C:\\Program Files\\Micro-Manager-1.4"
 func (s *Session) SetDeviceAdapterSearchPaths(paths []string) {
 	c_paths := make([]*C.char, len(paths)+1)
 	for i, path := range paths {
@@ -117,6 +129,10 @@ func (s *Session) SetDeviceAdapterSearchPaths(paths []string) {
 	}
 }
 
+// GetDeviceAdapterNames returns the names of discoverable device adapter modules.
+//
+// The list is  constructed based on filename matching in the current search paths,
+// and it does not check whether the files are valid and compatible device adapters.
 func (s *Session) GetDeviceAdapterNames() (names []string, err error) {
 	var c_names **C.char
 	status := C.MM_GetDeviceAdapterNames(s.mmcore, &c_names)
@@ -130,6 +146,8 @@ func (s *Session) GetDeviceAdapterNames() (names []string, err error) {
 //
 // Generic device control
 //
+
+// GetDevicePropertyNames returns all property names supported by the device.
 func (s *Session) GetDevicePropertyNames(label string) (names []string, err error) {
 	c_label := C.CString(label)
 	defer C.free(unsafe.Pointer(c_label))
@@ -143,6 +161,7 @@ func (s *Session) GetDevicePropertyNames(label string) (names []string, err erro
 	return
 }
 
+// GetProperty returns the property value of the device as a string.
 func (s *Session) GetProperty(label string, property string) (value string, err error) {
 	c_label := C.CString(label)
 	c_property := C.CString(property)
@@ -200,15 +219,94 @@ func (s *Session) SetCameraDevice(label string) error {
 	return statusToError(status)
 }
 
+func (s *Session) SetShutterDevice(label string) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetShutterDevice(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetFocusDevice(label string) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetFocusDevice(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetXYStageDevice(label string) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetXYStageDevice(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetAutoFocusDevice(label string) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetAutoFocusDevice(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) CameraDevice() (label string) {
+	var c_str *C.char
+	C.MM_GetCameraDevice(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	label = C.GoString(c_str)
+	return label
+}
+
+func (s *Session) ShutterDevice() (label string) {
+	var c_str *C.char
+	C.MM_GetShutterDevice(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	label = C.GoString(c_str)
+	return label
+}
+
+func (s *Session) FocusDevice() (label string) {
+	var c_str *C.char
+	C.MM_GetFocusDevice(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	label = C.GoString(c_str)
+	return label
+}
+
+func (s *Session) XYStageDevice() (label string) {
+	var c_str *C.char
+	C.MM_GetXYStageDevice(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	label = C.GoString(c_str)
+	return label
+}
+
+func (s *Session) AutoFocusDevice() (label string) {
+	var c_str *C.char
+	C.MM_GetAutoFocusDevice(s.mmcore, &c_str)
+	defer C.MM_StringFree(c_str)
+
+	label = C.GoString(c_str)
+	return label
+}
+
 //
-// Manage current devices.
+// Image acquisition
 //
 
+// SetExposureTime sets the exposure time of the current camera in milliseconds.
 func (s *Session) SetExposureTime(exposure_ms float64) error {
 	status := C.MM_SetExposure(s.mmcore, (C.double)(exposure_ms))
 	return statusToError(status)
 }
 
+// ExposureTime returns the exposure time of the current camera in milliseconds.
 func (s *Session) ExposureTime() (exposure_ms float64, err error) {
 	status := C.MM_GetExposure(s.mmcore, (*C.double)(&exposure_ms))
 	err = statusToError(status)
@@ -220,20 +318,16 @@ func (s *Session) SnapImage() error {
 	return statusToError(status)
 }
 
-func (s *Session) ImageBufferSize() (len int, err error) {
+func (s *Session) ImageBufferSize() (len int) {
 	var c_len C.uint32_t
-	status := C.MM_GetImageBufferSize(s.mmcore, &c_len)
+	C.MM_GetImageBufferSize(s.mmcore, &c_len)
 
 	len = int(c_len)
-	err = statusToError(status)
 	return
 }
 
 func (s *Session) GetImage() (buf []byte, err error) {
-	len, err := s.ImageBufferSize()
-	if err != nil {
-		return
-	}
+	len := s.ImageBufferSize()
 
 	var c_pbuf *C.uint8_t
 	status := C.MM_GetImage(s.mmcore, &c_pbuf)
@@ -351,7 +445,11 @@ func (s *Session) NumberOfStates(label string) (n_states int, err error) {
 // Hub and peripheral devices.
 //
 
+//
 // Helper function
+//
+
+// goStringList converts a NULL terminated array of strings to []string in Go.
 func goStringList(c_str_list **C.char) []string {
 	strs := make([]string, 0)
 

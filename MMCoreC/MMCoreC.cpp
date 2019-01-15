@@ -481,64 +481,39 @@ DllExport MM_Status MM_SetAutoFocusDevice(MM_Session mm, const char *label) {
     return MM_ErrOK;
 }
 
-DllExport MM_Status MM_GetCameraDevice(MM_Session mm, char **label) {
+DllExport void MM_GetCameraDevice(MM_Session mm, char **label) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    std::string str;
-    try {
-        str = core->getCameraDevice();
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
+    std::string str = core->getCameraDevice();
     std_to_c_string(str, label);
-    return MM_ErrOK;
+    return;
 }
 
-DllExport MM_Status MM_GetShutterDevice(MM_Session mm, char **label) {
+DllExport void MM_GetShutterDevice(MM_Session mm, char **label) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    std::string str;
-    try {
-        str = core->getShutterDevice();
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
+    std::string str = core->getShutterDevice();
     std_to_c_string(str, label);
-    return MM_ErrOK;
+    return;
 }
 
-DllExport MM_Status MM_GetFocusDevice(MM_Session mm, char **label) {
+DllExport void MM_GetFocusDevice(MM_Session mm, char **label) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    std::string str;
-    try {
-        str = core->getFocusDevice();
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
+    std::string str = core->getFocusDevice();
     std_to_c_string(str, label);
-    return MM_ErrOK;
+    return;
 }
 
-DllExport MM_Status MM_GetXYStageDevice(MM_Session mm, char **label) {
+DllExport void MM_GetXYStageDevice(MM_Session mm, char **label) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    std::string str;
-    try {
-        str = core->getXYStageDevice();
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
+    std::string str = core->getXYStageDevice();
     std_to_c_string(str, label);
-    return MM_ErrOK;
+    return;
 }
 
-DllExport MM_Status MM_GetAutoFocusDevice(MM_Session mm, char **label) {
+DllExport void MM_GetAutoFocusDevice(MM_Session mm, char **label) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    std::string str;
-    try {
-        str = core->getAutoFocusDevice();
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
+    std::string str = core->getAutoFocusDevice();
     std_to_c_string(str, label);
-    return MM_ErrOK;
+    return;
 }
 
 //
@@ -616,76 +591,48 @@ DllExport MM_Status MM_GetImage(MM_Session mm, uint8_t **ptr_buffer) {
     return MM_ErrOK;
 }
 
-DllExport MM_Status MM_GetImageWidth(MM_Session mm, uint16_t *width) {
+DllExport void MM_GetImageWidth(MM_Session mm, uint16_t *width) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *width = (uint16_t)(core->getImageWidth());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *width = (uint16_t)(core->getImageWidth());
+    return;
 }
 
-DllExport MM_Status MM_GetImageHeight(MM_Session mm, uint16_t *height) {
+DllExport void MM_GetImageHeight(MM_Session mm, uint16_t *height) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *height = (uint16_t)(core->getImageHeight());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *height = (uint16_t)(core->getImageHeight());
+    return;
 }
 
-DllExport MM_Status MM_GetBytesPerPixel(MM_Session mm, uint8_t *bytes) {
+DllExport void MM_GetBytesPerPixel(MM_Session mm, uint8_t *bytes) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *bytes = (uint8_t)(core->getBytesPerPixel());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *bytes = (uint8_t)(core->getBytesPerPixel());
+    return;
 }
 
-DllExport MM_Status MM_GetImageBitDepth(MM_Session mm, uint8_t *bit_depth) {
+DllExport void MM_GetImageBitDepth(MM_Session mm, uint8_t *bit_depth) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *bit_depth = (uint8_t)(core->getImageBitDepth());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *bit_depth = (uint8_t)(core->getImageBitDepth());
+    return;
 }
 
-DllExport MM_Status MM_GetNumberOfComponents(MM_Session mm,
-                                             uint8_t *n_components) {
+DllExport void MM_GetNumberOfComponents(MM_Session mm,
+                                        uint8_t *n_components) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *n_components = (uint8_t)(core->getNumberOfComponents());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *n_components = (uint8_t)(core->getNumberOfComponents());
+    return;
 }
 
-DllExport MM_Status MM_GetNumberOfCameraChannels(MM_Session mm,
-                                                 uint8_t *n_channels) {
+DllExport void MM_GetNumberOfCameraChannels(MM_Session mm,
+                                            uint8_t *n_channels) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *n_channels = (uint8_t)(core->getNumberOfCameraChannels());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *n_channels = (uint8_t)(core->getNumberOfCameraChannels());
+    return;
 }
 
-DllExport MM_Status MM_GetImageBufferSize(MM_Session mm, uint32_t *len) {
+DllExport void MM_GetImageBufferSize(MM_Session mm, uint32_t *len) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *len = (uint32_t)(core->getImageBufferSize());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *len = (uint32_t)(core->getImageBufferSize());
+    return;
 }
 
 DllExport MM_Status MM_SetCircularBufferMemoryFootprint(MM_Session mm,
@@ -761,14 +708,10 @@ DllExport MM_Status MM_StopSequenceAcquisition(MM_Session mm) {
     return MM_ErrOK;
 }
 
-DllExport MM_Status MM_IsSequenceRunning(MM_Session mm, uint8_t *status) {
+DllExport void MM_IsSequenceRunning(MM_Session mm, uint8_t *status) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        *status = (bool)(core->isSequenceRunning());
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    *status = (bool)(core->isSequenceRunning());
+    return;
 }
 
 DllExport MM_Status MM_GetLastImage(MM_Session mm, uint8_t **ptr_buffer) {

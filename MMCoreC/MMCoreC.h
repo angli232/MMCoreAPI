@@ -183,11 +183,11 @@ DllExport MM_Status MM_SetFocusDevice(MM_Session mm, const char *label);
 DllExport MM_Status MM_SetXYStageDevice(MM_Session mm, const char *label);
 DllExport MM_Status MM_SetAutoFocusDevice(MM_Session mm, const char *label);
 
-DllExport MM_Status MM_GetCameraDevice(MM_Session mm, char **label);
-DllExport MM_Status MM_GetShutterDevice(MM_Session mm, char **label);
-DllExport MM_Status MM_GetFocusDevice(MM_Session mm, char **label);
-DllExport MM_Status MM_GetXYStageDevice(MM_Session mm, char **label);
-DllExport MM_Status MM_GetAutoFocusDevice(MM_Session mm, char **label);
+DllExport void MM_GetCameraDevice(MM_Session mm, char **label);
+DllExport void MM_GetShutterDevice(MM_Session mm, char **label);
+DllExport void MM_GetFocusDevice(MM_Session mm, char **label);
+DllExport void MM_GetXYStageDevice(MM_Session mm, char **label);
+DllExport void MM_GetAutoFocusDevice(MM_Session mm, char **label);
 
 // Image acquisition
 DllExport MM_Status MM_SetROI(MM_Session mm, int x, int y, int x_size,
@@ -201,22 +201,15 @@ DllExport MM_Status MM_GetExposure(MM_Session mm, double *exp);
 DllExport MM_Status MM_SnapImage(MM_Session mm);
 DllExport MM_Status MM_GetImage(MM_Session mm, uint8_t **ptr_buffer);
 
-DllExport MM_Status MM_GetImageWidth(MM_Session mm, uint16_t *width);
-DllExport MM_Status MM_GetImageHeight(MM_Session mm, uint16_t *height);
-DllExport MM_Status MM_GetBytesPerPixel(MM_Session mm, uint8_t *bytes);
-DllExport MM_Status MM_GetImageBitDepth(MM_Session mm, uint8_t *bit_depth);
-DllExport MM_Status MM_GetNumberOfComponents(MM_Session mm,
-                                             uint8_t *n_components);
-DllExport MM_Status MM_GetNumberOfCameraChannels(MM_Session mm,
-                                                 uint8_t *n_channels);
-DllExport MM_Status MM_GetImageBufferSize(MM_Session mm, uint32_t *len);
-
-DllExport MM_Status MM_SetCircularBufferMemoryFootprint(MM_Session mm,
-                                                        uint32_t size_MB);
-DllExport void MM_GetCircularBufferMemoryFootprint(MM_Session mm,
-                                                   uint32_t *size_MB);
-DllExport MM_Status MM_InitializeCircularBuffer(MM_Session mm);
-DllExport MM_Status MM_ClearCircularBuffer(MM_Session mm);
+DllExport void MM_GetImageWidth(MM_Session mm, uint16_t *width);
+DllExport void MM_GetImageHeight(MM_Session mm, uint16_t *height);
+DllExport void MM_GetBytesPerPixel(MM_Session mm, uint8_t *bytes);
+DllExport void MM_GetImageBitDepth(MM_Session mm, uint8_t *bit_depth);
+DllExport void MM_GetNumberOfComponents(MM_Session mm,
+                                        uint8_t *n_components);
+DllExport void MM_GetNumberOfCameraChannels(MM_Session mm,
+                                            uint8_t *n_channels);
+DllExport void MM_GetImageBufferSize(MM_Session mm, uint32_t *len);
 
 DllExport MM_Status MM_StartSequenceAcquisition(MM_Session mm,
                                                 int16_t num_images,
@@ -225,7 +218,9 @@ DllExport MM_Status MM_StartSequenceAcquisition(MM_Session mm,
 DllExport MM_Status MM_StartContinuousSequenceAcquisition(MM_Session mm,
                                                           double interval_ms);
 DllExport MM_Status MM_StopSequenceAcquisition(MM_Session mm);
-DllExport MM_Status MM_IsSequenceRunning(MM_Session mm, uint8_t *status);
+DllExport void MM_IsSequenceRunning(MM_Session mm, uint8_t *status);
+
+// Image circular buffer
 DllExport MM_Status MM_GetLastImage(MM_Session mm, uint8_t **ptr_buffer);
 DllExport MM_Status MM_PopNextImage(MM_Session mm, uint8_t **ptr_buffer);
 
@@ -233,6 +228,13 @@ DllExport void MM_GetRemainingImageCount(MM_Session mm, int16_t *count);
 DllExport void MM_GetBufferTotalCapacity(MM_Session mm, int16_t *capacity);
 DllExport void MM_GetBufferFreeCapacity(MM_Session mm, int16_t *capacity);
 DllExport void MM_IsBufferOverflowed(MM_Session mm, uint8_t *overflowed);
+
+DllExport MM_Status MM_SetCircularBufferMemoryFootprint(MM_Session mm,
+                                                        uint32_t size_MB);
+DllExport void MM_GetCircularBufferMemoryFootprint(MM_Session mm,
+                                                   uint32_t *size_MB);
+DllExport MM_Status MM_InitializeCircularBuffer(MM_Session mm);
+DllExport MM_Status MM_ClearCircularBuffer(MM_Session mm);
 
 // Shutter control
 DllExport MM_Status MM_SetShutter(MM_Session mm, const char *label,
