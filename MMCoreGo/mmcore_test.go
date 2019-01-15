@@ -182,9 +182,82 @@ func ExampleSession_StartContinuousSequenceAcquisition() {
 	}
 
 	fmt.Printf("Finished acquiring %d images with ContinuousSequenceAcquisition.\n", n_images)
-
 	// Output:
 	// width=512, height=512, bytesPerPixel=1, bitDepth=8
 	// Exposure time: 100.000000 ms
 	// Finished acquiring 10 images with ContinuousSequenceAcquisition.
+}
+
+func ExampleSession_GetAvailableDevices() {
+	mmc := mmcore.NewSession()
+	defer mmc.Close()
+
+	// Set the search path for device adapters
+	path := []string{"C:\\Program Files\\Micro-Manager-1.4"}
+	mmc.SetDeviceAdapterSearchPaths(path)
+
+	// This function is not very useful, but you can get the search path.
+	fmt.Printf("DeviceAdapterSearchPaths: %v\n", mmc.DeviceAdapterSearchPaths())
+
+	// List the discovered device adapter modules.
+	names, err := mmc.GetDeviceAdapterNames()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("%d Device Adapters have been discovered.", len(names))
+
+	// We can confirm that DemoCamera module has been discovered
+	var discovered bool
+	for _, name := range names {
+		if name == "DemoCamera" {
+			discovered = true
+			break
+		}
+	}
+	if !discovered {
+		log.Fatal("DemoCamera is not discovered")
+	}
+	fmt.Println(" Including DemoCamera.")
+
+	// Get available devices from the module.
+	dev_names, err := mmc.GetAvailableDevices("DemoCamera")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("AvailableDevices from DemoCamera:\n  %v\n", dev_names)
+
+	// Get available device descriptions from the module.
+	descriptions, err := mmc.GetAvailableDeviceDescriptions("DemoCamera")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("AvailableDeviceDescriptions from DemoCamera:\n")
+	for _, description := range descriptions {
+		fmt.Printf("  %s\n", description)
+	}
+
+	// Output:
+	// DeviceAdapterSearchPaths: [C:\Program Files\Micro-Manager-1.4]
+	// 177 Device Adapters have been discovered. Including DemoCamera.
+	// AvailableDevices from DemoCamera:
+	//   [DCam DWheel DStateDevice DObjective DStage DXYStage DLightPath DAutoFocus DShutter D-DA D-DA2 DOptovar DGalvo TransposeProcessor ImageFlipX ImageFlipY MedianFilter DHub]
+	// AvailableDeviceDescriptions from DemoCamera:
+	//   Demo camera
+	//   Demo filter wheel
+	//   Demo State Device
+	//   Demo objective turret
+	//   Demo stage
+	//   Demo XY stage
+	//   Demo light path
+	//   Demo auto focus
+	//   Demo shutter
+	//   Demo DA
+	//   Demo DA-2
+	//   Demo Optovar
+	//   Demo Galvo
+	//   TransposeProcessor
+	//   ImageFlipX
+	//   ImageFlipY
+	//   MedianFilter
+	//   DHub
 }

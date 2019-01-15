@@ -52,15 +52,15 @@ func (s *Session) APIVersionInfo() string {
 
 // LoadDevice loads a device with specified device adapter module
 // and assigns a label name in the session.
-func (s *Session) LoadDevice(label, module_name, device_name string) error {
+func (s *Session) LoadDevice(label, module_name, dev_name string) error {
 	c_label := C.CString(label)
 	c_module_name := C.CString(module_name)
-	c_device_name := C.CString(device_name)
+	c_dev_name := C.CString(dev_name)
 	defer C.free(unsafe.Pointer(c_label))
 	defer C.free(unsafe.Pointer(c_module_name))
-	defer C.free(unsafe.Pointer(c_device_name))
+	defer C.free(unsafe.Pointer(c_dev_name))
 
-	status := C.MM_LoadDevice(s.mmcore, c_label, c_module_name, c_device_name)
+	status := C.MM_LoadDevice(s.mmcore, c_label, c_module_name, c_dev_name)
 	return statusToError(status)
 }
 
@@ -139,6 +139,32 @@ func (s *Session) GetDeviceAdapterNames() (names []string, err error) {
 	defer C.MM_StringListFree(c_names)
 
 	names = goStringList(c_names)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetAvailableDevices(module_name string) (dev_names []string, err error) {
+	c_module_name := C.CString(module_name)
+	defer C.free(unsafe.Pointer(c_module_name))
+
+	var c_dev_names **C.char
+	status := C.MM_GetAvailableDevices(s.mmcore, c_module_name, &c_dev_names)
+	defer C.MM_StringListFree(c_dev_names)
+
+	dev_names = goStringList(c_dev_names)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetAvailableDeviceDescriptions(module_name string) (descriptions []string, err error) {
+	c_module_name := C.CString(module_name)
+	defer C.free(unsafe.Pointer(c_module_name))
+
+	var c_descriptions **C.char
+	status := C.MM_GetAvailableDeviceDescriptions(s.mmcore, c_module_name, &c_descriptions)
+	defer C.MM_StringListFree(c_descriptions)
+
+	descriptions = goStringList(c_descriptions)
 	err = statusToError(status)
 	return
 }

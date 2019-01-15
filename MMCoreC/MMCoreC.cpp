@@ -267,7 +267,7 @@ DllExport MM_Status MM_GetAvailableDeviceDescriptions(MM_Session mm,
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     std::vector<std::string> str_list;
     try {
-        str_list = core->getAvailableDevices(library);
+        str_list = core->getAvailableDeviceDescriptions(library);
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
