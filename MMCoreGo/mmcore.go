@@ -338,57 +338,51 @@ func (s *Session) GetImage() (buf []byte, err error) {
 	return
 }
 
-func (s *Session) ImageWidth() (width int, err error) {
+func (s *Session) ImageWidth() (width int) {
 	var c_width C.uint16_t
-	status := C.MM_GetImageWidth(s.mmcore, &c_width)
+	C.MM_GetImageWidth(s.mmcore, &c_width)
 
 	width = int(c_width)
-	err = statusToError(status)
 	return
 }
 
-func (s *Session) ImageHeight() (height int, err error) {
+func (s *Session) ImageHeight() (height int) {
 	var c_height C.uint16_t
-	status := C.MM_GetImageHeight(s.mmcore, &c_height)
+	C.MM_GetImageHeight(s.mmcore, &c_height)
 
 	height = int(c_height)
-	err = statusToError(status)
 	return
 }
 
-func (s *Session) BytesPerPixel() (bytes_per_pixel int, err error) {
+func (s *Session) BytesPerPixel() (bytes_per_pixel int) {
 	var c_bytes_per_pixel C.uint8_t
-	status := C.MM_GetBytesPerPixel(s.mmcore, &c_bytes_per_pixel)
+	C.MM_GetBytesPerPixel(s.mmcore, &c_bytes_per_pixel)
 
 	bytes_per_pixel = int(c_bytes_per_pixel)
-	err = statusToError(status)
 	return
 }
 
-func (s *Session) ImageBitDepth() (bit_depth int, err error) {
+func (s *Session) ImageBitDepth() (bit_depth int) {
 	var c_bit_depth C.uint8_t
-	status := C.MM_GetImageBitDepth(s.mmcore, &c_bit_depth)
+	C.MM_GetImageBitDepth(s.mmcore, &c_bit_depth)
 
 	bit_depth = int(c_bit_depth)
-	err = statusToError(status)
 	return
 }
 
-func (s *Session) NumberOfComponents() (n_components int, err error) {
+func (s *Session) NumberOfComponents() (n_components int) {
 	var c_n_components C.uint8_t
-	status := C.MM_GetNumberOfComponents(s.mmcore, &c_n_components)
+	C.MM_GetNumberOfComponents(s.mmcore, &c_n_components)
 
 	n_components = int(c_n_components)
-	err = statusToError(status)
 	return
 }
 
-func (s *Session) NumberOfCameraChannels() (n_channels int, err error) {
+func (s *Session) NumberOfCameraChannels() (n_channels int) {
 	var c_n_channels C.uint8_t
-	status := C.MM_GetNumberOfCameraChannels(s.mmcore, &c_n_channels)
+	C.MM_GetNumberOfCameraChannels(s.mmcore, &c_n_channels)
 
 	n_channels = int(c_n_channels)
-	err = statusToError(status)
 	return
 }
 
