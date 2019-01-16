@@ -187,6 +187,20 @@ func (s *Session) GetDevicePropertyNames(label string) (names []string, err erro
 	return
 }
 
+func (s *Session) HasProperty(label string, property string) (has_property bool, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_has_property C.uint8_t
+	status := C.MM_HasProperty(s.mmcore, c_label, c_property, &c_has_property)
+
+	has_property = goBool(c_has_property)
+	err = statusToError(status)
+	return
+}
+
 // GetProperty returns the property value of the device as a string.
 func (s *Session) GetProperty(label string, property string) (value string, err error) {
 	c_label := C.CString(label)
@@ -231,6 +245,105 @@ func (s *Session) SetProperty(label string, property string, state interface{}) 
 		C.free(unsafe.Pointer(c_state))
 	}
 	return statusToError(status)
+}
+
+func (s *Session) GetAllowedPropertyValues(label string, property string) (values []string, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_values **C.char
+	status := C.MM_GetAllowedPropertyValues(s.mmcore, c_label, c_property, &c_values)
+	defer C.MM_StringListFree(c_values)
+
+	values = goStringList(c_values)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) IsPropertyReadOnly(label string, property string) (read_only bool, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_read_only C.uint8_t
+	status := C.MM_IsPropertyReadOnly(s.mmcore, c_label, c_property, &c_read_only)
+
+	read_only = goBool(c_read_only)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) IsPropertyPreInit(label string, property string) (pre_init bool, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_pre_init C.uint8_t
+	status := C.MM_IsPropertyPreInit(s.mmcore, c_label, c_property, &c_pre_init)
+
+	pre_init = goBool(c_pre_init)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) IsPropertySequenceable(label string, property string) (sequenceable bool, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_sequenceable C.uint8_t
+	status := C.MM_IsPropertySequenceable(s.mmcore, c_label, c_property, &c_sequenceable)
+
+	sequenceable = goBool(c_sequenceable)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) HasPropertyLimits(label string, property string) (has_limits bool, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_has_limits C.uint8_t
+	status := C.MM_HasPropertyLimits(s.mmcore, c_label, c_property, &c_has_limits)
+
+	has_limits = goBool(c_has_limits)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetPropertyLowerLimit(label string, property string) (lower_limit float64, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_lower_limit C.double
+	status := C.MM_GetPropertyLowerLimit(s.mmcore, c_label, c_property, &c_lower_limit)
+
+	lower_limit = float64(c_lower_limit)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetPropertyUpperLimit(label string, property string) (upper_limit float64, err error) {
+	c_label := C.CString(label)
+	c_property := C.CString(property)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_property))
+
+	var c_upper_limit C.double
+	status := C.MM_GetPropertyUpperLimit(s.mmcore, c_label, c_property, &c_upper_limit)
+
+	upper_limit = float64(c_upper_limit)
+	err = statusToError(status)
+	return
 }
 
 //
@@ -567,6 +680,30 @@ func (s *Session) ClearCircularBuffer() error {
 }
 
 //
+// Shutter control
+//
+
+func (s *Session) SetShutterOpen(label string, is_open bool) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetShutterOpen(s.mmcore, c_label, cBool(is_open))
+	return statusToError(status)
+}
+
+func (s *Session) GetShutterOpen(label string) (is_open bool, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_is_open C.uint8_t
+	status := C.MM_GetShutterOpen(s.mmcore, c_label, &c_is_open)
+
+	is_open = goBool(c_is_open)
+	err = statusToError(status)
+	return
+}
+
+//
 // State device control.
 //
 
@@ -630,4 +767,11 @@ func goBool(c_bool C.uint8_t) bool {
 		return true
 	}
 	return false
+}
+
+func cBool(go_bool bool) C.uint8_t {
+	if go_bool {
+		return 1
+	}
+	return 0
 }
