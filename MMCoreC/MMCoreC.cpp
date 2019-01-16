@@ -447,6 +447,18 @@ DllExport MM_Status MM_IsPropertySequenceable(MM_Session mm, const char *label,
     return MM_ErrOK;
 }
 
+DllExport MM_Status MM_HasPropertyLimits(MM_Session mm, const char *label,
+                                         const char *prop_name,
+                                         uint8_t *has_limit) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    try {
+        *has_limit = (bool)core->hasPropertyLimits(label, prop_name);
+    } catch (CMMError &e) {
+        return MM_Status(e.getCode());
+    }
+    return MM_ErrOK;
+}
+
 DllExport MM_Status MM_GetPropertyLowerLimit(MM_Session mm, const char *label,
                                              const char *prop_name,
                                              double *lower_limit) {
