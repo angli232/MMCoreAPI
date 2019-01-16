@@ -739,6 +739,138 @@ func (s *Session) NumberOfStates(label string) (n_states int, err error) {
 	return
 }
 
+func (s *Session) SetStateLabel(label string, state_label string) error {
+	c_label := C.CString(label)
+	c_state_label := C.CString(state_label)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_state_label))
+
+	status := C.MM_SetStateLabel(s.mmcore, c_label, c_state_label)
+	return statusToError(status)
+}
+
+func (s *Session) GetStateLabel(label string) (state_label string, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_state_label *C.char
+	status := C.MM_GetStateLabel(s.mmcore, c_label, &c_state_label)
+	defer C.MM_StringFree(c_state_label)
+
+	state_label = C.GoString(c_state_label)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) DefineStateLabel(label string, state int, state_label string) error {
+	c_label := C.CString(label)
+	c_state_label := C.CString(state_label)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_state_label))
+
+	status := C.MM_DefineStateLabel(s.mmcore, c_label, (C.int32_t)(state), c_state_label)
+	return statusToError(status)
+}
+
+func (s *Session) GetStateLabels(label string) (state_labels []string, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_state_labels **C.char
+	status := C.MM_GetStateLabels(s.mmcore, c_label, &c_state_labels)
+	defer C.MM_StringListFree(c_state_labels)
+
+	state_labels = goStringList(c_state_labels)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetStateFromLabel(label string, state_label string) (state int, err error) {
+	c_label := C.CString(label)
+	c_state_label := C.CString(state_label)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_state_label))
+
+	var c_state C.int32_t
+	status := C.MM_GetStateFromLabel(s.mmcore, c_label, c_state_label, &c_state)
+
+	state = int(c_state)
+	err = statusToError(status)
+	return
+}
+
+//
+// Focus (Z) stage control
+//
+
+func (s *Session) SetPosition(label string, position float64) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetPosition(s.mmcore, c_label, (C.double)(position))
+	return statusToError(status)
+}
+
+func (s *Session) SetRelativePosition(label string, delta float64) error {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetRelativePosition(s.mmcore, c_label, (C.double)(delta))
+	return statusToError(status)
+}
+
+func (s *Session) GetPosition(label string) (position float64, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_GetPosition(s.mmcore, c_label, (*C.double)(&position))
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) SetOrigin(label string) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetOrigin(s.mmcore, c_label)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) SetAdapterOrigin(label string, new_z_um float64) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetAdapterOrigin(s.mmcore, c_label, (C.double)(new_z_um))
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) SetFocusDirection(label string, sign int) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetFocusDirection(s.mmcore, c_label, (C.int8_t)(sign))
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetFocusDirection(label string) (sign int, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_sign C.int8_t
+	status := C.MM_GetFocusDirection(s.mmcore, c_label, &c_sign)
+
+	sign = int(c_sign)
+	err = statusToError(status)
+	return
+}
+
+//
+// XY stage control
+//
+
 //
 // Hub and peripheral devices.
 //
