@@ -258,7 +258,7 @@ DllExport MM_Status MM_ClearCircularBuffer(MM_Session mm);
 // Shutter control
 DllExport MM_Status MM_SetShutterOpen(MM_Session mm, const char *label,
                                   uint8_t is_open);
-DllExport MM_Status MM_GetShutteOpenr(MM_Session mm, const char *label,
+DllExport MM_Status MM_GetShutterOpen(MM_Session mm, const char *label,
                                   uint8_t *is_open);
 
 // Autofocus control
