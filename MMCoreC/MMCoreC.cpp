@@ -2,11 +2,16 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <map>
 
 #include "MMCore.h"
 #include "MMEventCallback.h"
 
 extern "C" {
+
+class MM_CPP_EventCallback;
+void MM_FreeRegisteredCallback(MM_Session mm);
+static std::map<MM_Session, MM_CPP_EventCallback*> mm_registered_callbacks;
 
 void std_to_c_string(std::string std_str, char **c_str) {
     size_t cap_c_str = std_str.size() + 1;
@@ -33,6 +38,7 @@ DllExport void MM_Open(MM_Session *core) {
 }
 
 DllExport void MM_Close(MM_Session mm) {
+    MM_FreeRegisteredCallback(mm);
     delete reinterpret_cast<CMMCore *>(mm);
 }
 
@@ -123,6 +129,8 @@ DllExport MM_Status MM_InitializeDevice(MM_Session mm, const char *label) {
 }
 
 DllExport MM_Status MM_Reset(MM_Session mm) {
+    MM_FreeRegisteredCallback(mm);
+    
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
         core->reset();
@@ -139,73 +147,92 @@ DllExport MM_Status MM_Reset(MM_Session mm) {
 class MM_CPP_EventCallback: public MMEventCallback {
 private:
     struct MM_EventCallback *callback;
+    MM_Session mm;
 public:
-    MM_CPP_EventCallback(struct MM_EventCallback *callback) {
+    MM_CPP_EventCallback(struct MM_EventCallback *callback, MM_Session mm) {
         this->callback = callback;
+        this->mm = mm;
     }
     virtual ~MM_CPP_EventCallback() {}
 
     void onPropertiesChanged(){
         if (this->callback->onPropertiesChanged != NULL) {
-            this->callback->onPropertiesChanged();
+            this->callback->onPropertiesChanged(this->mm);
         }
     }
 
-    void onPropertyChanged(const char *name, const char *propName, const char *propValue) {
+    void onPropertyChanged(const char *label, const char *propName, const char *propValue) {
         if (this->callback->onPropertyChanged != NULL) {
-            this->callback->onPropertyChanged(name, propName, propValue);
+            this->callback->onPropertyChanged(this->mm, label, propName, propValue);
         }
     }
 
     void onConfigGroupChanged(const char *groupName, const char *newConfigName) {
         if (this->callback->onConfigGroupChanged != NULL) {
-            this->callback->onConfigGroupChanged(groupName, newConfigName);
+            this->callback->onConfigGroupChanged(this->mm, groupName, newConfigName);
         }
     }
 
     void onSystemConfigurationLoaded() {
         if (this->callback->onSystemConfigurationLoaded != NULL) {
-            this->callback->onSystemConfigurationLoaded();
+            this->callback->onSystemConfigurationLoaded(this->mm);
         }
     }
 
     void onPixelSizeChanged(double newPixelSizeUm) {
         if (this->callback->onPixelSizeChanged != NULL) {
-            this->callback->onPixelSizeChanged(newPixelSizeUm);
+            this->callback->onPixelSizeChanged(this->mm, newPixelSizeUm);
         }
     }
 
-    void onStagePositionChanged(char *name, double pos) {
+    void onStagePositionChanged(char *label, double pos) {
         if (this->callback->onStagePositionChanged != NULL) {
-            this->callback->onStagePositionChanged(name, pos);
+            this->callback->onStagePositionChanged(this->mm, label, pos);
         }
     }
 
-    void onXYStagePositionChanged(char *name, double xpos, double ypos) {
+    void onXYStagePositionChanged(char *label, double xpos, double ypos) {
         if (this->callback->onXYStagePositionChanged != NULL) {
-            this->callback->onXYStagePositionChanged(name, xpos, ypos);
+            this->callback->onXYStagePositionChanged(this->mm, label, xpos, ypos);
         }
     }
 
-    void onExposureChanged(char *name, double newExposure) {
+    void onExposureChanged(char *label, double newExposure) {
         if (this->callback->onExposureChanged != NULL) {
-            this->callback->onExposureChanged(name, newExposure);
+            this->callback->onExposureChanged(this->mm, label, newExposure);
         }
     }
 
-    void onSLMExposureChanged(char *name, double newExposure) {
+    void onSLMExposureChanged(char *label, double newExposure) {
         if (this->callback->onSLMExposureChanged != NULL) {
-            this->callback->onSLMExposureChanged(name, newExposure);
+            this->callback->onSLMExposureChanged(this->mm, label, newExposure);
         }
     }
 };
 
 DllExport void MM_RegisterCallback(MM_Session mm, struct MM_EventCallback *callback) {
-    // TODO: fix the memory leakage here, currently cb will not be freeed.
-    MM_CPP_EventCallback *cb = new MM_CPP_EventCallback(callback);
+    // If a callback has been registered, free it
+    MM_FreeRegisteredCallback(mm);
+    
+    // Create and register the call back from C struct
+    MM_CPP_EventCallback *cb = new MM_CPP_EventCallback(callback, mm);
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     core->registerCallback(cb);
+
+    // Save the pointer
+    mm_registered_callbacks[mm] = cb;
     return;
+}
+
+void MM_FreeRegisteredCallback(MM_Session mm) {
+    std::map<MM_Session, MM_CPP_EventCallback*>::iterator it = mm_registered_callbacks.begin();
+    while(it != mm_registered_callbacks.end()) {
+        if (it->first == mm) {
+            delete it->second;
+            mm_registered_callbacks.erase(it);
+        }
+        it++;
+    }
 }
 
 //
@@ -920,20 +947,20 @@ DllExport MM_Status MM_DisableContinuousFocus(MM_Session mm) {
 }
 
 DllExport MM_Status MM_IsContinuousFocusEnabled(MM_Session mm,
-                                                uint8_t *status) {
+                                                uint8_t *enabled) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
-        *status = (bool)(core->isContinuousFocusEnabled());
+        *enabled = (bool)(core->isContinuousFocusEnabled());
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
     return MM_ErrOK;
 }
 
-DllExport MM_Status MM_IsContinuousFocusLocked(MM_Session mm, uint8_t *status) {
+DllExport MM_Status MM_IsContinuousFocusLocked(MM_Session mm, uint8_t *locked) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
     try {
-        *status = (bool)(core->isContinuousFocusLocked());
+        *locked = (bool)(core->isContinuousFocusLocked());
     } catch (CMMError &e) {
         return MM_Status(e.getCode());
     }
@@ -1148,15 +1175,11 @@ DllExport MM_Status MM_SetAdapterOrigin(MM_Session mm, const char *label,
     return MM_ErrOK;
 }
 
-DllExport MM_Status MM_SetFocusDirection(MM_Session mm, const char *label,
+DllExport void MM_SetFocusDirection(MM_Session mm, const char *label,
                                          int8_t sign) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
-    try {
-        core->setFocusDirection(label, (int)sign);
-    } catch (CMMError &e) {
-        return MM_Status(e.getCode());
-    }
-    return MM_ErrOK;
+    core->setFocusDirection(label, (int)sign);
+    return;
 }
 
 DllExport MM_Status MM_GetFocusDirection(MM_Session mm, const char *label,

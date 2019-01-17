@@ -108,15 +108,15 @@ DllExport MM_Status MM_Reset(MM_Session mm);
 
 // Event callback
 struct MM_EventCallback {
-    void (*onPropertiesChanged)();
-    void (*onPropertyChanged)(const char* name, const char* propName, const char* propValue);
-    void (*onConfigGroupChanged)(const char* groupName, const char* newConfigName);
-    void (*onSystemConfigurationLoaded)();
-    void (*onPixelSizeChanged)(double newPixelSizeUm);
-    void (*onStagePositionChanged)(char* name, double pos);
-    void (*onXYStagePositionChanged)(char* name, double xpos, double ypos);
-    void (*onExposureChanged)(char* name, double newExposure);
-    void (*onSLMExposureChanged)(char* name, double newExposure);
+    void (*onPropertiesChanged)(MM_Session mm);
+    void (*onPropertyChanged)(MM_Session mm, const char* label, const char* propName, const char* propValue);
+    void (*onConfigGroupChanged)(MM_Session mm, const char* groupName, const char* newConfigName);
+    void (*onSystemConfigurationLoaded)(MM_Session mm);
+    void (*onPixelSizeChanged)(MM_Session mm, double newPixelSizeUm);
+    void (*onStagePositionChanged)(MM_Session mm, char* label, double pos);
+    void (*onXYStagePositionChanged)(MM_Session mm, char* label, double xpos, double ypos);
+    void (*onExposureChanged)(MM_Session mm, char* label, double newExposure);
+    void (*onSLMExposureChanged)(MM_Session mm, char* label, double newExposure);
 };
 
 DllExport void MM_RegisterCallback(MM_Session mm, struct MM_EventCallback *callback);
@@ -304,8 +304,8 @@ DllExport MM_Status MM_SetRelativePosition(MM_Session mm, const char *label,
 DllExport MM_Status MM_SetOrigin(MM_Session mm, const char *label);
 DllExport MM_Status MM_SetAdapterOrigin(MM_Session mm, const char *label,
                                         double new_z_um);
-DllExport MM_Status MM_SetFocusDirection(MM_Session mm, const char *label,
-                                         int8_t sign);
+DllExport void MM_SetFocusDirection(MM_Session mm, const char *label,
+                                    int8_t sign);
 DllExport MM_Status MM_GetFocusDirection(MM_Session mm, const char *label,
                                          int8_t *sign);
 

@@ -6,23 +6,39 @@ package mmcore
 // #include <stdlib.h>
 //
 // #include "MMCoreC.h"
+//
+// void c_registerCallback(MM_Session mm);
+// extern void onPropertyChanged(MM_Session mm, char *label, char *property, char *value);
+// extern void onStagePositionChanged(MM_Session mm, char *label, double pos);
 import "C"
 
 import (
+	"sync"
 	"unsafe"
 )
 
+var go_session map[C.MM_Session]*Session
+
 type Session struct {
 	mmcore C.MM_Session
+
+	// Events
+	propertyChanged      []chan<- *PropertyChangedEvent
+	stagePositionChanged []chan<- *StagePositionChangedEvent
 }
 
 func NewSession() *Session {
 	var s Session
 	C.MM_Open(&s.mmcore)
+	if go_session == nil {
+		go_session = make(map[C.MM_Session]*Session)
+	}
+	go_session[s.mmcore] = &s
 	return &s
 }
 
 func (s *Session) Close() {
+	delete(go_session, s.mmcore)
 	C.MM_Close(s.mmcore)
 }
 
@@ -93,6 +109,76 @@ func (s *Session) InitializeDevice(label string) error {
 func (s *Session) Reset() error {
 	status := C.MM_Reset(s.mmcore)
 	return statusToError(status)
+}
+
+//
+// Event notification
+//
+
+type PropertyChangedEvent struct {
+	label    string
+	property string
+	value    string
+}
+
+type StagePositionChangedEvent struct {
+	label string
+	pos   float64
+}
+
+func (s *Session) NotifyPropertyChanged(event chan<- *PropertyChangedEvent) {
+	// Register the callback on the C side.
+	C.c_registerCallback(s.mmcore)
+
+	// Save the channel for sending events.
+	s.propertyChanged = append(s.propertyChanged, event)
+}
+
+func (s *Session) NotifyStagePositionChanged(event chan<- *StagePositionChangedEvent) {
+	// Register the callback on the C side.
+	C.c_registerCallback(s.mmcore)
+
+	// Save the channel for sending events.
+	s.stagePositionChanged = append(s.stagePositionChanged, event)
+}
+
+//export onPropertyChanged
+func onPropertyChanged(mmcore C.MM_Session, label *C.char, property *C.char, value *C.char) {
+	event := &PropertyChangedEvent{
+		label:    C.GoString(label),
+		property: C.GoString(property),
+		value:    C.GoString(value),
+	}
+
+	// Notify the listeners
+	var wg sync.WaitGroup
+	for _, ch := range go_session[mmcore].propertyChanged {
+		wg.Add(1)
+		go func() {
+			ch <- event
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+}
+
+//export onStagePositionChanged
+func onStagePositionChanged(mmcore C.MM_Session, label *C.char, pos C.double) {
+	event := &StagePositionChangedEvent{
+		label: C.GoString(label),
+		pos:   float64(pos),
+	}
+
+	// Notify the listeners
+	var wg sync.WaitGroup
+	for _, ch := range go_session[mmcore].stagePositionChanged {
+		wg.Add(1)
+		go func() {
+			ch <- event
+			wg.Done()
+		}()
+	}
+	wg.Wait()
 }
 
 //
@@ -438,6 +524,31 @@ func (s *Session) AutoFocusDevice() (label string) {
 //
 // Image acquisition settings
 //
+
+func (s *Session) SetROI(x int, y int, x_size int, y_size int) error {
+	status := C.MM_SetROI(s.mmcore, (C.int)(x), (C.int)(y), (C.int)(x_size), (C.int)(y_size))
+	return statusToError(status)
+}
+
+func (s *Session) GetROI() (x int, y int, x_size int, y_size int, err error) {
+	var c_x C.int
+	var c_y C.int
+	var c_x_size C.int
+	var c_y_size C.int
+	status := C.MM_GetROI(s.mmcore, &c_x, &c_y, &c_x_size, &c_y_size)
+
+	x = int(c_x)
+	y = int(c_y)
+	x_size = int(x_size)
+	y_size = int(y_size)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) ClearROI() error {
+	status := C.MM_ClearROI(s.mmcore)
+	return statusToError(status)
+}
 
 // SetExposureTime sets the exposure time of the current camera in milliseconds.
 func (s *Session) SetExposureTime(exposure_ms float64) error {
@@ -930,12 +1041,11 @@ func (s *Session) SetAdapterOrigin(label string, new_z_um float64) (err error) {
 	return
 }
 
-func (s *Session) SetFocusDirection(label string, sign int) (err error) {
+func (s *Session) SetFocusDirection(label string, sign int) {
 	c_label := C.CString(label)
 	defer C.free(unsafe.Pointer(c_label))
 
-	status := C.MM_SetFocusDirection(s.mmcore, c_label, (C.int8_t)(sign))
-	err = statusToError(status)
+	C.MM_SetFocusDirection(s.mmcore, c_label, (C.int8_t)(sign))
 	return
 }
 
