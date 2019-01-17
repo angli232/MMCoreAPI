@@ -266,8 +266,8 @@ DllExport void MM_GetLastFocusScore(MM_Session mm, double *score);
 DllExport void MM_GetCurrentFocusScore(MM_Session mm, double *score);
 DllExport MM_Status MM_EnableContinuousFocus(MM_Session mm);
 DllExport MM_Status MM_DisableContinuousFocus(MM_Session mm);
-DllExport MM_Status MM_IsContinuousFocusEnabled(MM_Session mm, uint8_t *status);
-DllExport MM_Status MM_IsContinuousFocusLocked(MM_Session mm, uint8_t *status);
+DllExport MM_Status MM_IsContinuousFocusEnabled(MM_Session mm, uint8_t *enabled);
+DllExport MM_Status MM_IsContinuousFocusLocked(MM_Session mm, uint8_t *locked);
 DllExport MM_Status MM_IsContinuousFocusDrive(
     MM_Session mm, const char *label, uint8_t *is_continuous_focus_drive);
 DllExport MM_Status MM_FullFocus(MM_Session mm);

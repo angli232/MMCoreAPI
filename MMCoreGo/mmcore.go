@@ -704,6 +704,90 @@ func (s *Session) GetShutterOpen(label string) (is_open bool, err error) {
 }
 
 //
+// Autofocus control
+//
+
+func (s *Session) LastFocusScore() (score float64) {
+	var c_score C.double
+	C.MM_GetLastFocusScore(s.mmcore, &c_score)
+
+	score = float64(c_score)
+	return
+}
+
+func (s *Session) CurrentFocusScore() (score float64) {
+	var c_score C.double
+	C.MM_GetCurrentFocusScore(s.mmcore, &c_score)
+
+	score = float64(c_score)
+	return
+}
+
+func (s *Session) EnableContinuousFocus() error {
+	status := C.MM_EnableContinuousFocus(s.mmcore)
+	return statusToError(status)
+}
+
+func (s *Session) DisableContinuousFocus() error {
+	status := C.MM_DisableContinuousFocus(s.mmcore)
+	return statusToError(status)
+}
+
+func (s *Session) IsContinuousFocusEnabled() (enabled bool, err error) {
+	var c_enabled C.uint8_t
+	status := C.MM_IsContinuousFocusEnabled(s.mmcore, &c_enabled)
+
+	enabled = goBool(c_enabled)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) IsContinuousFocusLocked() (locked bool, err error) {
+	var c_locked C.uint8_t
+	status := C.MM_IsContinuousFocusLocked(s.mmcore, &c_locked)
+
+	locked = goBool(c_locked)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) IsContinuousFocusDrive(label string) (is_continuous_focus_drive bool, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_is_continuous_focus_drive C.uint8_t
+	status := C.MM_IsContinuousFocusDrive(s.mmcore, c_label, &c_is_continuous_focus_drive)
+
+	is_continuous_focus_drive = goBool(c_is_continuous_focus_drive)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) FullFocus() (err error) {
+	status := C.MM_FullFocus(s.mmcore)
+	return statusToError(status)
+}
+
+func (s *Session) IncrementalFocus() (err error) {
+	status := C.MM_IncrementalFocus(s.mmcore)
+	return statusToError(status)
+}
+
+func (s *Session) SetAutoFocusOffset(offset float64) error {
+	status := C.MM_SetAutoFocusOffset(s.mmcore, (C.double)(offset))
+	return statusToError(status)
+}
+
+func (s *Session) GetAutoFocusOffset() (offset float64, err error) {
+	var c_offset C.double
+	status := C.MM_GetAutoFocusOffset(s.mmcore, &c_offset)
+
+	offset = float64(c_offset)
+	err = statusToError(status)
+	return
+}
+
+//
 // State device control.
 //
 
