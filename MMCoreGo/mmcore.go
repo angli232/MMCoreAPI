@@ -871,9 +871,209 @@ func (s *Session) GetFocusDirection(label string) (sign int, err error) {
 // XY stage control
 //
 
+func (s *Session) SetXYPosition(label string, x float64, y float64) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetXYPosition(s.mmcore, c_label, (C.double)(x), (C.double)(y))
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) SetRelativeXYPosition(label string, dx float64, dy float64) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetRelativeXYPosition(s.mmcore, c_label, (C.double)(dx), (C.double)(dy))
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetXYPosition(label string) (x float64, y float64, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_x C.double
+	var c_y C.double
+	status := C.MM_GetXYPosition(s.mmcore, c_label, &c_x, &c_y)
+
+	x = float64(c_x)
+	y = float64(c_y)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetXPosition(label string) (x float64, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_x C.double
+	status := C.MM_GetXPosition(s.mmcore, c_label, &c_x)
+
+	x = float64(c_x)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetYPosition(label string) (y float64, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_y C.double
+	status := C.MM_GetYPosition(s.mmcore, c_label, &c_y)
+
+	y = float64(c_y)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) Stop(label string) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_Stop(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) Home(label string) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_Home(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetOriginXY(label string) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetOriginXY(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetOriginX(label string) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetOriginX(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetOriginY(label string) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetOriginY(s.mmcore, c_label)
+	return statusToError(status)
+}
+
+func (s *Session) SetAdpaterOriginXY(label string, new_x_um float64, new_y_um float64) (err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	status := C.MM_SetAdpaterOriginXY(s.mmcore, c_label, (C.double)(new_x_um), (C.double)(new_y_um))
+	err = statusToError(status)
+	return
+}
+
 //
-// Hub and peripheral devices.
+// Hub and peripheral devices
 //
+
+func (s *Session) SetParentLabel(label string, parent_label string) (err error) {
+	c_label := C.CString(label)
+	c_parent_label := C.CString(parent_label)
+	defer C.free(unsafe.Pointer(c_label))
+	defer C.free(unsafe.Pointer(c_parent_label))
+
+	status := C.MM_SetParentLabel(s.mmcore, c_label, c_parent_label)
+	return statusToError(status)
+}
+
+func (s *Session) GetParentLabel(label string) (parent_label string, err error) {
+	c_label := C.CString(label)
+	defer C.free(unsafe.Pointer(c_label))
+
+	var c_parent_label *C.char
+	status := C.MM_GetParentLabel(s.mmcore, c_label, &c_parent_label)
+	defer C.MM_StringFree(c_parent_label)
+
+	parent_label = C.GoString(c_parent_label)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetInstalledDevices(hub_label string) (names []string, err error) {
+	c_hub_label := C.CString(hub_label)
+	defer C.free(unsafe.Pointer(c_hub_label))
+
+	var c_names **C.char
+	status := C.MM_GetInstalledDevices(s.mmcore, c_hub_label, &c_names)
+	defer C.MM_StringListFree(c_names)
+
+	names = goStringList(c_names)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetInstalledDeviceDescription(hub_label string, name string) (descriptions string, err error) {
+	c_hub_label := C.CString(hub_label)
+	c_name := C.CString(name)
+	defer C.free(unsafe.Pointer(c_hub_label))
+	defer C.free(unsafe.Pointer(c_name))
+
+	var c_descriptions *C.char
+	status := C.MM_GetInstalledDeviceDescription(s.mmcore, c_hub_label, c_name, &c_descriptions)
+	defer C.MM_StringFree(c_descriptions)
+
+	descriptions = C.GoString(c_descriptions)
+	err = statusToError(status)
+	return
+}
+
+func (s *Session) GetLoadedPeripheralDevices(hub_label string) (labels []string, err error) {
+	c_hub_label := C.CString(hub_label)
+	defer C.free(unsafe.Pointer(c_hub_label))
+
+	var c_labels **C.char
+	status := C.MM_GetLoadedPeripheralDevices(s.mmcore, c_hub_label, &c_labels)
+	defer C.MM_StringListFree(c_labels)
+
+	labels = goStringList(c_labels)
+	err = statusToError(status)
+	return
+}
+
+//
+// Miscellaneous
+//
+
+func (s *Session) UserId() (userid string) {
+	var c_userid *C.char
+	C.MM_GetUserId(s.mmcore, &c_userid)
+	defer C.MM_StringFree(c_userid)
+
+	userid = C.GoString(c_userid)
+	return
+}
+
+func (s *Session) HostName() (hostname string) {
+	var c_hostname *C.char
+	C.MM_GetHostName(s.mmcore, &c_hostname)
+	defer C.MM_StringFree(c_hostname)
+
+	hostname = C.GoString(c_hostname)
+	return
+}
+
+func (s *Session) MACAddresses() (addresses []string) {
+	var c_addresses **C.char
+	C.MM_GetMACAddresses(s.mmcore, &c_addresses)
+	defer C.MM_StringListFree(c_addresses)
+
+	addresses = goStringList(c_addresses)
+	return
+}
 
 //
 // Helper function
