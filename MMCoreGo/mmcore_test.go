@@ -403,3 +403,212 @@ func ExampleSession_GetProperty() {
 	//                     TriggerDevice|                           ""|         |                |
 	//              UseExposureSequences|                         "No"|         |                |["No" "Yes"]
 }
+
+//
+func ExampleSession_GetState() {
+	mmc := mmcore.NewSession()
+	defer mmc.Close()
+
+	// Set the search path for device adapters
+	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
+	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+
+	// MMCore refers a device by the label name.
+	wheelLabel := "DWheel"
+
+	// Load device "DWheel" with "DemoCamera" module, and assign the label name.
+	err := mmc.LoadDevice(wheelLabel, "DemoCamera", "DWheel")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//
+	err = mmc.InitializeAllDevices()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// GetState returns the current state of the state device.
+	state, err := mmc.GetState(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current State: %d\n", state)
+
+	// NumberOfStates returns total number of states.
+	n_states, err := mmc.NumberOfStates(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Number of States: %d\n", n_states)
+
+	// SetState sets the state to the requested state.
+	// As you noticed from the previous GetState,
+	// states are numbered from 0 to n_states-1.
+	err = mmc.SetState(wheelLabel, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Set state to 1")
+
+	// Let's check that the state has been set.
+	state, err = mmc.GetState(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current State: %d\n\n", state)
+
+	// Each state can have a human-readable text label.
+	// When controlling an automated microscope,
+	// device adapter may have read these labels from
+	// the configuration of the microscope,
+	// and the labels may be the names of the objectives
+	// or filter cube.
+	state_labels, err := mmc.GetStateLabels(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("State Labels: %q\n", state_labels)
+
+	// Instead of getting the current state in the form of a number,
+	// we can also get the label of the current state.
+	state_label, err := mmc.GetStateLabel(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current state label: %q\n", state_label)
+
+	// DefineStateLabel gives a name to the state.
+	// In this filter wheel example, we can call number 1 state "GFP".
+	err = mmc.DefineStateLabel(wheelLabel, 1, "GFP")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("Defined label of state 1 as \"GFP\"")
+
+	// Let's get all the labels again to see the changes.
+	state_labels, err = mmc.GetStateLabels(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("State Labels: %q\n", state_labels)
+
+	state_label, err = mmc.GetStateLabel(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Label of current state: %q\n", state_label)
+
+	// We can also get the state number by the label.
+	state_of_label, err := mmc.GetStateFromLabel(wheelLabel, "GFP")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("State labeled as GFP is: %d\n", state_of_label)
+
+	// Instead of setting state by the number, we can also set the state by the label.
+	err = mmc.SetStateLabel(wheelLabel, "State-5")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("StateStateLabel to State-5")
+
+	state, err = mmc.GetState(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current State: %d\n\n", state)
+
+	err = mmc.SetStateLabel(wheelLabel, "GFP")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("StateStateLabel to GFP")
+
+	state, err = mmc.GetState(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current State: %d\n\n", state)
+
+	// State devices can also be controlled through
+	// GetProperty and SetProperty.
+	property_names, err := mmc.GetDevicePropertyNames(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Properties")
+	for _, property_name := range property_names {
+		value, err := mmc.GetProperty(wheelLabel, property_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		readonly, err := mmc.IsPropertyReadOnly(wheelLabel, property_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("  %s: %s", property_name, value)
+		if readonly {
+			fmt.Printf(" (readonly)\n")
+		} else {
+			fmt.Printf("\n")
+		}
+	}
+	fmt.Println()
+
+	err = mmc.SetProperty(wheelLabel, "State", 4)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("SetProperty State=4")
+
+	state, err = mmc.GetState(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current State: %d\n", state)
+
+	err = mmc.SetProperty(wheelLabel, "Label", "State-7")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("SetProperty Label=\"State-7\"")
+
+	state, err = mmc.GetState(wheelLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Current State: %d\n", state)
+
+	// Output:
+	// Current State: 0
+	// Number of States: 10
+	// Set state to 1
+	// Current State: 1
+	//
+	// State Labels: ["State-0" "State-1" "State-2" "State-3" "State-4" "State-5" "State-6" "State-7" "State-8" "State-9"]
+	// Current state label: "State-1"
+	// Defined label of state 1 as "GFP"
+	// State Labels: ["State-0" "GFP" "State-2" "State-3" "State-4" "State-5" "State-6" "State-7" "State-8" "State-9"]
+	// Label of current state: "GFP"
+	// State labeled as GFP is: 1
+	// StateStateLabel to State-5
+	// Current State: 5
+	//
+	// StateStateLabel to GFP
+	// Current State: 1
+	//
+	// Properties
+	//   ClosedPosition: 0
+	//   Description: Demo filter wheel driver (readonly)
+	//   HubID:  (readonly)
+	//   Label: GFP
+	//   Name: DWheel (readonly)
+	//   State: 1
+	//
+	// SetProperty State=4
+	// Current State: 4
+	// SetProperty Label="State-7"
+	// Current State: 7
+}
