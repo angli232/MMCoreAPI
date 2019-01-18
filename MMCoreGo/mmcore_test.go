@@ -612,3 +612,115 @@ func ExampleSession_GetState() {
 	// SetProperty Label="State-7"
 	// Current State: 7
 }
+
+func ExampleSession_GetPosition() {
+	mmc := mmcore.NewSession()
+	defer mmc.Close()
+
+	// Set the search path for device adapters
+	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
+	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+
+	// MMCore refers a device by the label name.
+	focusDriveLabel := "DStage"
+
+	// Load device "DStage" with "DemoCamera" module, and assign the label name.
+	err := mmc.LoadDevice(focusDriveLabel, "DemoCamera", "DStage")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//
+	err = mmc.InitializeAllDevices()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	property_names, err := mmc.GetDevicePropertyNames(focusDriveLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Properties of DStage")
+	for _, property_name := range property_names {
+		value, err := mmc.GetProperty(focusDriveLabel, property_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		readonly, err := mmc.IsPropertyReadOnly(focusDriveLabel, property_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("  %s: %s", property_name, value)
+		if readonly {
+			fmt.Printf(" (readonly)\n")
+		} else {
+			fmt.Printf("\n")
+		}
+	}
+	fmt.Println()
+
+	pos, err := mmc.GetPosition(focusDriveLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Position: %g\n", pos)
+
+	err = mmc.SetPosition(focusDriveLabel, 10.1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Set Position to 10.1\n")
+
+	pos, err = mmc.GetPosition(focusDriveLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Position: %g\n", pos)
+
+	err = mmc.SetRelativePosition(focusDriveLabel, -1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Set Relative Position: -1\n")
+
+	pos, err = mmc.GetPosition(focusDriveLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Position: %g\n", pos)
+
+	fmt.Println()
+	focus_direction, err := mmc.GetFocusDirection(focusDriveLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("FocusDirection: %d\n", focus_direction)
+
+	mmc.SetFocusDirection(focusDriveLabel, 1)
+	fmt.Println("Set Focus Direction to 1")
+
+	focus_direction, err = mmc.GetFocusDirection(focusDriveLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("FocusDirection: %d\n", focus_direction)
+
+	// Output:
+	// Properties of DStage
+	//   Description: Demo stage driver (readonly)
+	//   HubID:  (readonly)
+	//   Name: DStage (readonly)
+	//   Position: 0.0000
+	//   UseSequences: No
+	//
+	// Position: 0
+	// Set Position to 10.1
+	// Position: 10.1
+	// Set Relative Position: -1
+	// Position: 9.1
+	//
+	// FocusDirection: 0
+	// Set Focus Direction to 1
+	// FocusDirection: 1
+}
