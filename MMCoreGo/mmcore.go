@@ -1,3 +1,4 @@
+// Package mmcore provides Go interface to Micro-Manager Core API for automated microscopy.
 package mmcore
 
 // #cgo CFLAGS: -I../MMCoreC
@@ -23,8 +24,9 @@ type Session struct {
 	mmcore C.MM_Session
 
 	// Events
-	propertyChanged      []chan<- *PropertyChangedEvent
-	stagePositionChanged []chan<- *StagePositionChangedEvent
+	c_callback_registered bool
+	propertyChanged       []chan<- *PropertyChangedEvent
+	stagePositionChanged  []chan<- *StagePositionChangedEvent
 }
 
 func NewSession() *Session {
@@ -127,16 +129,22 @@ type StagePositionChangedEvent struct {
 }
 
 func (s *Session) NotifyPropertyChanged(event chan<- *PropertyChangedEvent) {
-	// Register the callback on the C side.
-	C.c_registerCallback(s.mmcore)
+	// Register the callback on the C side, if not already done.
+	if !s.c_callback_registered {
+		C.c_registerCallback(s.mmcore)
+		s.c_callback_registered = true
+	}
 
 	// Save the channel for sending events.
 	s.propertyChanged = append(s.propertyChanged, event)
 }
 
 func (s *Session) NotifyStagePositionChanged(event chan<- *StagePositionChangedEvent) {
-	// Register the callback on the C side.
-	C.c_registerCallback(s.mmcore)
+	// Register the callback on the C side, if not already done.
+	if !s.c_callback_registered {
+		C.c_registerCallback(s.mmcore)
+		s.c_callback_registered = true
+	}
 
 	// Save the channel for sending events.
 	s.stagePositionChanged = append(s.stagePositionChanged, event)
