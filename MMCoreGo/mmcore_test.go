@@ -167,7 +167,7 @@ func ExampleSession_StartContinuousSequenceAcquisition() {
 	n_images := 0
 	for {
 		if mmc.GetRemainingImageCount() > 0 {
-			_, err := mmc.GetLastImage()
+			_, err := mmc.PopNextImage()
 			if err != nil {
 				mmc.StopSequenceAcquisition()
 				log.Fatal(err)
