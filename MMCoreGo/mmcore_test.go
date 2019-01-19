@@ -724,3 +724,163 @@ func ExampleSession_GetPosition() {
 	// Set Focus Direction to 1
 	// FocusDirection: 1
 }
+
+func ExampleSession_GetInstalledDevices() {
+	mmc := mmcore.NewSession()
+	defer mmc.Close()
+
+	// Set the search path for device adapters
+	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
+	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+
+	// MMCore refers a device by the label name.
+	hubLabel := "DHub"
+
+	// Load device "DHub" with "DemoCamera" module, and assign the label name.
+	err := mmc.LoadDevice(hubLabel, "DemoCamera", "DHub")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = mmc.InitializeAllDevices()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Discover devices under the hub
+	names, err := mmc.GetInstalledDevices(hubLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("InstalledDevices under DHub: %q\n", names)
+
+	// You can get the descriptions, although there is nothing interesting in this case.
+	fmt.Printf("Descriptions:\n")
+	for _, name := range names {
+		descriptions, err := mmc.GetInstalledDeviceDescription(hubLabel, name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("  %s: %q\n", name, descriptions)
+	}
+
+	// Nothing under the hub has been loaded
+	loaded, err := mmc.GetLoadedPeripheralDevices(hubLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("LoadedPeripheralDevices under DHub: %q\n", loaded)
+
+	// Let's load a device
+	err = mmc.LoadDevice("wheel", "DemoCamera", "DWheel")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// and initialize it
+	err = mmc.InitializeDevice("wheel")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Now we can see the loaded device under the hub
+	fmt.Println()
+	fmt.Println("After loading DWheel with label \"wheel\":")
+	loaded, err = mmc.GetLoadedPeripheralDevices(hubLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("LoadedPeripheralDevices under DHub: %q\n", loaded)
+
+	// We can get the hub of a device
+	parent_label, err := mmc.GetParentLabel("wheel")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("ParentLabel of wheel: %q\n", parent_label)
+
+	// Not sure what this SetParentLabel really does.
+	err = mmc.SetParentLabel("wheel", "random_hub")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println()
+	fmt.Println("Set ParentLabel of wheel as random_hub.")
+
+	// You can get the label back
+	parent_label, err = mmc.GetParentLabel("wheel")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("ParentLabel of wheel: %q\n", parent_label)
+
+	// Of course it does not affect InstalledDevices
+	loaded, err = mmc.GetInstalledDevices(hubLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("InstalledDevices under DHub: %q\n", loaded)
+
+	// But the device will disappear in the loaded devices list under the hub.
+	loaded, err = mmc.GetLoadedPeripheralDevices(hubLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("LoadedPeripheralDevices under DHub: %q\n", loaded)
+
+	// There is no such hub called "random_hub", so this will fail
+	names, err = mmc.GetInstalledDevices("random_hub")
+	if err != nil {
+		fmt.Printf("GetInstalledDevices under random_hub: Err %d (%s)\n", err, err)
+	} else {
+		fmt.Printf("InstalledDevices under random_hub: %q\n", names)
+	}
+
+	// It does not show up under the loaded devices of the new label either.
+	loaded, err = mmc.GetLoadedPeripheralDevices("random_hub")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("LoadedPeripheralDevices under random_hub: %q\n", loaded)
+
+	// Of source, the device is really loaded, and shows up if we get all the loaded devices.
+	loaded, err = mmc.GetLoadedDevices()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("LoadedDevices: %q\n", loaded)
+
+	// Output:
+	// InstalledDevices under DHub: ["DCam" "DWheel" "DStateDevice" "DObjective" "DStage" "DXYStage" "DLightPath" "DAutoFocus" "DShutter" "D-DA" "D-DA2" "DOptovar" "DGalvo" "TransposeProcessor" "ImageFlipX" "ImageFlipY" "MedianFilter"]
+	// Descriptions:
+	//   DCam: "N/A"
+	//   DWheel: "N/A"
+	//   DStateDevice: "N/A"
+	//   DObjective: "N/A"
+	//   DStage: "N/A"
+	//   DXYStage: "N/A"
+	//   DLightPath: "N/A"
+	//   DAutoFocus: "N/A"
+	//   DShutter: "N/A"
+	//   D-DA: "N/A"
+	//   D-DA2: "N/A"
+	//   DOptovar: "N/A"
+	//   DGalvo: "N/A"
+	//   TransposeProcessor: "N/A"
+	//   ImageFlipX: "N/A"
+	//   ImageFlipY: "N/A"
+	//   MedianFilter: "N/A"
+	// LoadedPeripheralDevices under DHub: []
+	//
+	// After loading DWheel with label "wheel":
+	// LoadedPeripheralDevices under DHub: ["wheel"]
+	// ParentLabel of wheel: "DHub"
+	//
+	// Set ParentLabel of wheel as random_hub.
+	// ParentLabel of wheel: "random_hub"
+	// InstalledDevices under DHub: ["DCam" "DWheel" "DStateDevice" "DObjective" "DStage" "DXYStage" "DLightPath" "DAutoFocus" "DShutter" "D-DA" "D-DA2" "DOptovar" "DGalvo" "TransposeProcessor" "ImageFlipX" "ImageFlipY" "MedianFilter"]
+	// LoadedPeripheralDevices under DHub: []
+	// GetInstalledDevices under random_hub: Err 1 (generic (unspecified) error)
+	// LoadedPeripheralDevices under random_hub: []
+	// LoadedDevices: ["DHub" "wheel" "Core"]
+}
