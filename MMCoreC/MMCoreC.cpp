@@ -60,9 +60,17 @@ DllExport void MM_GetAPIVersionInfo(MM_Session mm, char **info) {
 //
 //
 
-DllExport void MM_StringFree(char *str) { free(str); }
+DllExport void MM_StringFree(char *str) {
+    if (str != NULL) {
+        free(str);
+    }
+}
 
 DllExport void MM_StringListFree(char **str_list) {
+    if (str_list == NULL) {
+        return;
+    }
+
     size_t i = 0;
     while (str_list[i]) {
         free(str_list[i]);

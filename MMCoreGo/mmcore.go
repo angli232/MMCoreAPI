@@ -1285,6 +1285,10 @@ func (s *Session) MACAddresses() (addresses []string) {
 func goStringList(c_str_list **C.char) []string {
 	strs := make([]string, 0)
 
+	if unsafe.Pointer(c_str_list) == C.NULL {
+		return strs
+	}
+
 	c_str_slice := (*[1 << 30]*C.char)(unsafe.Pointer(c_str_list))
 	for _, c_str := range c_str_slice {
 		if unsafe.Pointer(c_str) == C.NULL {
