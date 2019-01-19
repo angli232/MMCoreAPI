@@ -267,6 +267,16 @@ func (s *Session) GetAvailableDeviceDescriptions(module_name string) (descriptio
 // Generic device control
 //
 
+func (s *Session) GetLoadedDevices() (labels []string, err error) {
+	var c_labels **C.char
+	status := C.MM_GetLoadedDevices(s.mmcore, &c_labels)
+	defer C.MM_StringListFree(c_labels)
+
+	labels = goStringList(c_labels)
+	err = statusToError(status)
+	return
+}
+
 // GetDevicePropertyNames returns all property names supported by the device.
 func (s *Session) GetDevicePropertyNames(label string) (names []string, err error) {
 	c_label := C.CString(label)

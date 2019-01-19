@@ -137,6 +137,7 @@ DllExport MM_Status MM_GetAvailableDeviceTypes(MM_Session mm,
                                                size_t *len_types);
 
 // Generic device control
+DllExport MM_Status MM_GetLoadedDevices(MM_Session mm, char ***labels);
 DllExport MM_Status MM_GetDevicePropertyNames(MM_Session mm, const char *label,
                                               char ***names);
 DllExport MM_Status MM_HasProperty(MM_Session mm, const char *label,

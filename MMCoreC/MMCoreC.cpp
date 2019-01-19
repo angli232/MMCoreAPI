@@ -332,6 +332,19 @@ DllExport MM_Status MM_GetAvailableDeviceTypes(MM_Session mm,
 //
 // Generic device control
 //
+
+DllExport MM_Status MM_GetLoadedDevices(MM_Session mm, char ***labels) {
+    CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+    std::vector<std::string> list;
+    try {
+        list = core->getLoadedDevices();
+    } catch (CMMError &e) {
+        return MM_Status(e.getCode());
+    }
+    std_to_c_string_list(list, labels);
+    return MM_ErrOK;
+}
+
 DllExport MM_Status MM_GetDevicePropertyNames(MM_Session mm, const char *label,
                                               char ***names) {
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
