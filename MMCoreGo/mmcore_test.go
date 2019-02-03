@@ -884,3 +884,79 @@ func ExampleSession_GetInstalledDevices() {
 	// LoadedPeripheralDevices under random_hub: []
 	// LoadedDevices: ["DHub" "wheel" "Core"]
 }
+
+func ExampleSession_GetXYPosition() {
+	mmc := mmcore.NewSession()
+	defer mmc.Close()
+
+	// Set the search path for device adapters
+	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
+	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+
+	// MMCore refers a device by the label name.
+	xyStageLabel := "DXYStage"
+
+	// Load device "DXYStage" with "DemoCamera" module, and assign the label name.
+	err := mmc.LoadDevice(xyStageLabel, "DemoCamera", "DXYStage")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	//
+	err = mmc.InitializeAllDevices()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	property_names, err := mmc.GetDevicePropertyNames(xyStageLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Properties of DXYStage")
+	for _, property_name := range property_names {
+		value, err := mmc.GetProperty(xyStageLabel, property_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		readonly, err := mmc.IsPropertyReadOnly(xyStageLabel, property_name)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("  %s: %s", property_name, value)
+		if readonly {
+			fmt.Printf(" (readonly)\n")
+		} else {
+			fmt.Printf("\n")
+		}
+	}
+	fmt.Println()
+
+	pos_x, pos_y, err := mmc.GetXYPosition(xyStageLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Position: %g, %g\n", pos_x, pos_y)
+
+	err = mmc.SetXYPosition(xyStageLabel, 10.2, 20)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pos_x, pos_y, err = mmc.GetXYPosition(xyStageLabel)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Printf("Position: %g, %g\n", pos_x, pos_y)
+
+	// Output:
+	// Properties of DXYStage
+	//   Description: Demo XY stage driver (readonly)
+	//   HubID:  (readonly)
+	//   Name: DXYStage (readonly)
+	//   TransposeMirrorX: 0
+	//   TransposeMirrorY: 0
+	//
+	// Position: -0, -0
+	// Position: 10.2, 19.995
+}
