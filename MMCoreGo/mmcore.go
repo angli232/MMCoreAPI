@@ -118,14 +118,14 @@ func (s *Session) Reset() error {
 //
 
 type PropertyChangedEvent struct {
-	label    string
-	property string
-	value    string
+	Label    string
+	Property string
+	Value    string
 }
 
 type StagePositionChangedEvent struct {
-	label string
-	pos   float64
+	Label string
+	Pos   float64
 }
 
 func (s *Session) NotifyPropertyChanged(event chan<- *PropertyChangedEvent) {
@@ -153,9 +153,9 @@ func (s *Session) NotifyStagePositionChanged(event chan<- *StagePositionChangedE
 //export onPropertyChanged
 func onPropertyChanged(mmcore C.MM_Session, label *C.char, property *C.char, value *C.char) {
 	event := &PropertyChangedEvent{
-		label:    C.GoString(label),
-		property: C.GoString(property),
-		value:    C.GoString(value),
+		Label:    C.GoString(label),
+		Property: C.GoString(property),
+		Value:    C.GoString(value),
 	}
 
 	// Notify the listeners
@@ -173,8 +173,8 @@ func onPropertyChanged(mmcore C.MM_Session, label *C.char, property *C.char, val
 //export onStagePositionChanged
 func onStagePositionChanged(mmcore C.MM_Session, label *C.char, pos C.double) {
 	event := &StagePositionChangedEvent{
-		label: C.GoString(label),
-		pos:   float64(pos),
+		Label: C.GoString(label),
+		Pos:   float64(pos),
 	}
 
 	// Notify the listeners
