@@ -1,7 +1,7 @@
 // Package mmcore provides Go interface to Micro-Manager Core API for automated microscopy.
 package mmcore
 
-// #cgo CFLAGS: -I../MMCoreC
+// #cgo CFLAGS: -I../MMCoreC -DSTATIC_LIB
 // #cgo LDFLAGS: -L../lib -lMMCoreC
 //
 // #include <stdlib.h>
