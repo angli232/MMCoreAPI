@@ -161,67 +161,73 @@ public:
         this->callback = callback;
         this->mm = mm;
     }
-    virtual ~MM_CPP_EventCallback() {}
 
     void onPropertiesChanged(){
-        if (this->callback->onPropertiesChanged != NULL) {
+        if (this->callback && this->callback->onPropertiesChanged) {
             this->callback->onPropertiesChanged(this->mm);
         }
     }
 
     void onPropertyChanged(const char *label, const char *propName, const char *propValue) {
-        if (this->callback->onPropertyChanged != NULL) {
+        if (this->callback && this->callback->onPropertyChanged) {
             this->callback->onPropertyChanged(this->mm, label, propName, propValue);
         }
     }
 
     void onConfigGroupChanged(const char *groupName, const char *newConfigName) {
-        if (this->callback->onConfigGroupChanged != NULL) {
+        if (this->callback && this->callback->onConfigGroupChanged) {
             this->callback->onConfigGroupChanged(this->mm, groupName, newConfigName);
         }
     }
 
     void onSystemConfigurationLoaded() {
-        if (this->callback->onSystemConfigurationLoaded != NULL) {
+        if (this->callback && this->callback->onSystemConfigurationLoaded) {
             this->callback->onSystemConfigurationLoaded(this->mm);
         }
     }
 
     void onPixelSizeChanged(double newPixelSizeUm) {
-        if (this->callback->onPixelSizeChanged != NULL) {
+        if (this->callback && this->callback->onPixelSizeChanged) {
             this->callback->onPixelSizeChanged(this->mm, newPixelSizeUm);
         }
     }
 
     void onStagePositionChanged(char *label, double pos) {
-        if (this->callback->onStagePositionChanged != NULL) {
+        if (this->callback && this->callback->onStagePositionChanged) {
             this->callback->onStagePositionChanged(this->mm, label, pos);
         }
     }
 
     void onXYStagePositionChanged(char *label, double xpos, double ypos) {
-        if (this->callback->onXYStagePositionChanged != NULL) {
+        if (this->callback && this->callback->onXYStagePositionChanged) {
             this->callback->onXYStagePositionChanged(this->mm, label, xpos, ypos);
         }
     }
 
     void onExposureChanged(char *label, double newExposure) {
-        if (this->callback->onExposureChanged != NULL) {
+        if (this->callback && this->callback->onExposureChanged) {
             this->callback->onExposureChanged(this->mm, label, newExposure);
         }
     }
 
     void onSLMExposureChanged(char *label, double newExposure) {
-        if (this->callback->onSLMExposureChanged != NULL) {
+        if (this->callback && this->callback->onSLMExposureChanged) {
             this->callback->onSLMExposureChanged(this->mm, label, newExposure);
         }
     }
 };
 
 DllExport void MM_RegisterCallback(MM_Session mm, struct MM_EventCallback *callback) {
+	if (mm == NULL) {
+		return;
+	}
+
     // If a callback has been registered, free it
     MM_FreeRegisteredCallback(mm);
-    
+	if (callback == NULL) {
+		return;
+	}
+
     // Create and register the call back from C struct
     MM_CPP_EventCallback *cb = new MM_CPP_EventCallback(callback, mm);
     CMMCore *core = reinterpret_cast<CMMCore *>(mm);
@@ -233,9 +239,16 @@ DllExport void MM_RegisterCallback(MM_Session mm, struct MM_EventCallback *callb
 }
 
 void MM_FreeRegisteredCallback(MM_Session mm) {
+	if (mm == NULL) {
+		return;
+	}
+
     std::map<MM_Session, MM_CPP_EventCallback*>::iterator it = mm_registered_callbacks.begin();
     while(it != mm_registered_callbacks.end()) {
         if (it->first == mm) {
+			CMMCore *core = reinterpret_cast<CMMCore *>(mm);
+		    core->registerCallback(nullptr);
+
             delete it->second;
             mm_registered_callbacks.erase(it);
         }
