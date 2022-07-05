@@ -8,11 +8,13 @@ import (
 	mmcore "github.com/Andeling/MMCoreAPI/MMCoreGo"
 )
 
+const microManagerInstallPath = "C:\\Program Files\\Micro-Manager-2.0"
+
 func main() {
 	mmc := mmcore.NewSession()
 	defer mmc.Close()
 
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	propertyChangedEvent := make(chan *mmcore.PropertyChangedEvent)
 	stagePositionChangedEvents := make(chan *mmcore.StagePositionChangedEvent)

@@ -10,6 +10,8 @@ import (
 	mmcore "github.com/Andeling/MMCoreAPI/MMCoreGo"
 )
 
+const microManagerInstallPath = "C:\\Program Files\\Micro-Manager-2.0"
+
 func ExampleSession() {
 	mmc := mmcore.NewSession()
 	defer mmc.Close()
@@ -17,8 +19,8 @@ func ExampleSession() {
 	fmt.Printf("Version Info: %s\n", mmc.VersionInfo())
 	fmt.Printf("API Version Info: %s\n", mmc.APIVersionInfo())
 	// Output:
-	// Version Info: MMCore version 8.6.0
-	// API Version Info: Device API version 68, Module API version 10
+	// Version Info: MMCore version 10.2.0
+	// API Version Info: Device API version 70, Module API version 10
 }
 
 func ExampleSession_SnapImage() {
@@ -27,7 +29,7 @@ func ExampleSession_SnapImage() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	cameraLabel := "Camera"
@@ -107,7 +109,7 @@ func ExampleSession_StartContinuousSequenceAcquisition() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	cameraLabel := "Camera"
@@ -196,8 +198,7 @@ func ExampleSession_GetAvailableDevices() {
 	defer mmc.Close()
 
 	// Set the search path for device adapters
-	path := []string{"C:\\Program Files\\Micro-Manager-1.4"}
-	mmc.SetDeviceAdapterSearchPaths(path)
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// This function is not very useful, but you can get the search path.
 	fmt.Printf("DeviceAdapterSearchPaths: %v\n", mmc.DeviceAdapterSearchPaths())
@@ -240,8 +241,8 @@ func ExampleSession_GetAvailableDevices() {
 	}
 
 	// Output:
-	// DeviceAdapterSearchPaths: [C:\Program Files\Micro-Manager-1.4]
-	// 177 Device Adapters have been discovered. Including DemoCamera.
+	// DeviceAdapterSearchPaths: [C:\Program Files\Micro-Manager-2.0]
+	// 212 Device Adapters have been discovered. Including DemoCamera.
 	// AvailableDevices from DemoCamera:
 	//   [DCam DWheel DStateDevice DObjective DStage DXYStage DLightPath DAutoFocus DShutter D-DA D-DA2 DOptovar DGalvo TransposeProcessor ImageFlipX ImageFlipY MedianFilter DHub]
 	// AvailableDeviceDescriptions from DemoCamera:
@@ -271,7 +272,7 @@ func ExampleSession_GetProperty() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	cameraLabel := "Camera"
@@ -357,10 +358,12 @@ func ExampleSession_GetProperty() {
 	}
 
 	w.Flush()
-
 	// Output:
 	//                     property_name|                        value|         |           limit|allowed_values
 	//                     AllowMultiROI|                          "0"|         |                |["0" "1"]
+	//              AsyncPropertyDelayMS|                       "2000"|         |                |
+	//             AsyncPropertyFollower|                           ""| readonly|                |
+	//               AsyncPropertyLeader|                           ""|         |                |
 	//                           Binning|                          "1"|         |                |["1" "2" "4" "8"]
 	//                          BitDepth|                          "8"|         |                |["10" "12" "14" "16" "32" "8"]
 	//                    CCDTemperature|                     "0.0000"|         |      [-100, 10]|
@@ -382,8 +385,10 @@ func ExampleSession_GetProperty() {
 	//                            Offset|                          "0"|         |                |
 	//                  OnCameraCCDXSize|                        "512"|         |                |
 	//                  OnCameraCCDYSize|                        "512"|         |                |
-	//          Photon Conversion Factor|                     "1.0000"|         |        [0.4, 4]|
+	//          Photon Conversion Factor|                     "1.0000"|         |      [0.01, 10]|
+	//                       Photon Flux|                    "50.0000"|         |       [2, 5000]|
 	//                         PixelType|                       "8bit"|         |                |["16bit" "32bit" "32bitRGB" "64bitRGB" "8bit"]
+	//             ReadNoise (electrons)|                     "2.5000"|         |      [0.25, 50]|
 	//                       ReadoutTime|                     "0.0000"|         |                |
 	//                      RotateImages|                          "0"|         |                |["0" "1"]
 	//                    SaturatePixels|                          "0"|         |                |["0" "1"]
@@ -411,7 +416,7 @@ func ExampleSession_GetState() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	wheelLabel := "DWheel"
@@ -619,7 +624,7 @@ func ExampleSession_GetPosition() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	focusDriveLabel := "DStage"
@@ -731,7 +736,7 @@ func ExampleSession_GetInstalledDevices() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	hubLabel := "DHub"
@@ -891,7 +896,7 @@ func ExampleSession_GetXYPosition() {
 
 	// Set the search path for device adapters
 	// MMCore will use "mmgr_dal_DemoCamera.dll" when we load a device with DemoCamera module.
-	mmc.SetDeviceAdapterSearchPaths([]string{"C:\\Program Files\\Micro-Manager-1.4"})
+	mmc.SetDeviceAdapterSearchPaths([]string{microManagerInstallPath})
 
 	// MMCore refers a device by the label name.
 	xyStageLabel := "DXYStage"
