@@ -17,7 +17,7 @@ A Go interface (based on Cgo) is provided. However, it is no longer actively use
 ### Additional notes
 
 #### Select vc142 toolset installed with VS 2022 in VS Code
-It should fine to use vc143. However, because Micro-Manager 2.0 officially uses vc142, it may be needed to use vc142 under certain conditions.
+It be should fine to use vc143. However, because Micro-Manager 2.0 officially uses vc142, it may be needed to use vc142 under certain conditions.
 
 You can install vc142 with VS 2022.
 
