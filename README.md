@@ -17,12 +17,19 @@ A Go interface (based on Cgo) is provided. However, it is no longer actively use
 * [vcpkg](https://vcpkg.io) installed to `C:\vcpkg` (to get `boost-1.77.0`)
 * (Optional) [Ninja](https://ninja-build.org) (for faster build)
 
+### Checkout the code
+```
+git clone --recursive https://github.com/Andeling/MMCoreAPI.git
+```
+No additional repositories are needed. 
+
 ### Build manually
 * Open Developer Command Prompt for VS 2019.
   * (If using VS 2022, to select vc142 toolset, open Command Prompt and enter `"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x64 -vcvars_ver=14.2`)
 
 * To install boost-1.77.0 with vcpkg and build:
   ```
+  cd MMCoreAPI
   mkdir build
   cd build
   cmake .. -GNinja -DVCPKG_TARGET_TRIPLET:STRING=x64-windows-static-md -DCMAKE_TOOLCHAIN_FILE:STRING=C:/vcpkg/scripts/buildsystems/vcpkg.cmake
